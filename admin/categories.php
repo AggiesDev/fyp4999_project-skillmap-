@@ -1,10 +1,77 @@
 <?php
-// Admin category and target role management page.
+// Admin category and target-role entry management.
 
 require_once __DIR__ . '/../includes/auth_check.php';
-skillmap_require_auth(['admin']);
+skillmap_require_permission('manage_skills');
+
 $activePage = 'categories';
-$data = skillmap_data()['admin']['categories'];
+$message = '';
+$error = '';
+$editCategory = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = (string) ($_POST['action'] ?? '');
+
+    if ($action === 'save_category') {
+        $categoryId = (int) ($_POST['category_id'] ?? 0);
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $type = (string) ($_POST['type'] ?? 'Skill Category');
+        $icon = trim((string) ($_POST['icon'] ?? 'bi-folder'));
+        $type = in_array($type, ['Skill Category', 'Target Role'], true) ? $type : 'Skill Category';
+
+        if ($name === '' || $icon === '') {
+            $error = 'Category name and icon are required.';
+        } else {
+            try {
+                if ($categoryId > 0) {
+                    $stmt = $pdo->prepare('UPDATE skill_categories SET name = :name, type = :type, icon = :icon WHERE id = :id');
+                    $stmt->execute(['name' => $name, 'type' => $type, 'icon' => $icon, 'id' => $categoryId]);
+                    $message = 'Category updated successfully.';
+                } else {
+                    $stmt = $pdo->prepare('INSERT INTO skill_categories (name, type, icon) VALUES (:name, :type, :icon)');
+                    $stmt->execute(['name' => $name, 'type' => $type, 'icon' => $icon]);
+                    $message = 'Category created successfully.';
+                }
+            } catch (PDOException $exception) {
+                $error = $exception->getCode() === '23000' ? 'A category or target-role entry with this name already exists.' : 'Unable to save category.';
+            }
+        }
+    }
+
+    if ($action === 'delete_category') {
+        $categoryId = (int) ($_POST['category_id'] ?? 0);
+        $dependents = 0;
+        if ($categoryId > 0) {
+            $stmt = $pdo->prepare('SELECT COUNT(*) FROM skills WHERE category_id = :id');
+            $stmt->execute(['id' => $categoryId]);
+            $dependents = (int) $stmt->fetchColumn();
+        }
+
+        if ($dependents > 0) {
+            $error = 'This category still has skills. Move or delete those skills first.';
+        } elseif ($categoryId > 0) {
+            $stmt = $pdo->prepare('DELETE FROM skill_categories WHERE id = :id');
+            $stmt->execute(['id' => $categoryId]);
+            $message = 'Category deleted successfully.';
+        }
+    }
+}
+
+$editId = (int) ($_GET['edit'] ?? 0);
+if ($editId > 0) {
+    $stmt = $pdo->prepare('SELECT id, name, type, icon FROM skill_categories WHERE id = :id LIMIT 1');
+    $stmt->execute(['id' => $editId]);
+    $editCategory = $stmt->fetch() ?: null;
+}
+
+$categories = $pdo->query(
+    'SELECT sc.id, sc.name, sc.type, sc.icon, DATE_FORMAT(sc.updated_at, "%e %b %Y") AS updated,
+            COUNT(s.id) AS skill_count
+     FROM skill_categories sc
+     LEFT JOIN skills s ON s.category_id = sc.id
+     GROUP BY sc.id
+     ORDER BY FIELD(sc.type, "Skill Category", "Target Role"), sc.name'
+)->fetchAll();
 ?>
 <!doctype html>
 <html lang="en">
@@ -19,13 +86,68 @@ $data = skillmap_data()['admin']['categories'];
 <body>
   <?php require __DIR__ . '/includes/navbar.php'; ?>
   <main class="container-fluid py-4 py-lg-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+      <div>
+        <h1 class="fw-bold mb-1">Manage Categories</h1>
+        <div class="text-muted">Maintain skill categories and target-role icon entries</div>
+      </div>
+      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php">Role Benchmarks</a>
+    </div>
+
+    <?php if ($message !== ''): ?><div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+    <?php if ($error !== ''): ?><div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+
     <div class="row g-4">
-      <div class="col-12">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><h1 class="fw-bold mb-1">Manage Categories &amp; Roles</h1><div class="text-muted">Maintain skill taxonomies and benchmarked target roles</div></div><div><a class="btn btn-success" href="/fyp_skillmapsystem/admin/reviews.php">Add New Category</a></div></div>
-        <ul class="nav nav-tabs mb-3"><li class="nav-item"><a class="nav-link active" href="/fyp_skillmapsystem/admin/categories.php">Skill Categories</a></li><li class="nav-item"><a class="nav-link" href="/fyp_skillmapsystem/admin/benchmarks.php">Target Roles &amp; Benchmarks</a></li></ul>
-        <div class="input-group mb-3" style="max-width: 360px;"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" placeholder="Search categories..."></div>
-        <div class="card"><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>#</th><th>Category Name</th><th>Type</th><th>Subcategories</th><th>Last Updated</th><th>Actions</th></tr></thead><tbody><?php foreach ($data as $index => $category): ?><tr><td><?= $index + 1 ?></td><td><i class="bi <?= htmlspecialchars($category['icon'], ENT_QUOTES, 'UTF-8') ?> me-2 text-primary"></i><?= htmlspecialchars($category['name'], ENT_QUOTES, 'UTF-8') ?></td><td><span class="badge text-bg-primary-subtle text-primary"><?= htmlspecialchars($category['type'], ENT_QUOTES, 'UTF-8') ?></span></td><td><?= $category['subcategories'] ?></td><td><?= htmlspecialchars($category['updated'], ENT_QUOTES, 'UTF-8') ?></td><td><button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></td></tr><?php endforeach; ?></tbody></table></div></div>
-        <nav class="mt-3"><ul class="pagination justify-content-end"><li class="page-item disabled"><span class="page-link">Previous</span></li><li class="page-item active"><span class="page-link">1</span></li><li class="page-item"><span class="page-link">2</span></li><li class="page-item"><span class="page-link">Next</span></li></ul></nav>
+      <div class="col-lg-4">
+        <form method="post" class="card">
+          <div class="card-body p-4">
+            <input type="hidden" name="action" value="save_category">
+            <input type="hidden" name="category_id" value="<?= (int) ($editCategory['id'] ?? 0) ?>">
+            <h2 class="h5 fw-bold mb-3"><?= $editCategory ? 'Edit Category' : 'Add Category' ?></h2>
+            <div class="d-grid gap-3">
+              <div><label class="form-label">Name</label><input name="name" class="form-control" value="<?= htmlspecialchars((string) ($editCategory['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></div>
+              <div><label class="form-label">Type</label><select name="type" class="form-select"><option value="Skill Category" <?= ($editCategory['type'] ?? '') === 'Skill Category' ? 'selected' : '' ?>>Skill Category</option><option value="Target Role" <?= ($editCategory['type'] ?? '') === 'Target Role' ? 'selected' : '' ?>>Target Role</option></select></div>
+              <div><label class="form-label">Bootstrap Icon Class</label><input name="icon" class="form-control" value="<?= htmlspecialchars((string) ($editCategory['icon'] ?? 'bi-folder'), ENT_QUOTES, 'UTF-8') ?>" required><div class="form-text">Example: bi-code-square, bi-people-fill</div></div>
+            </div>
+          </div>
+          <div class="card-footer bg-white border-0 p-4 pt-0 d-flex gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save Category</button>
+            <?php if ($editCategory): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/categories.php">Cancel</a><?php endif; ?>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Icon</th><th>Skills</th><th>Updated</th><th>Actions</th></tr></thead>
+              <tbody>
+                <?php foreach ($categories as $index => $category): ?>
+                  <tr>
+                    <td><?= $index + 1 ?></td>
+                    <td class="fw-semibold"><i class="bi <?= htmlspecialchars($category['icon'], ENT_QUOTES, 'UTF-8') ?> me-2 text-primary"></i><?= htmlspecialchars($category['name'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><span class="badge text-bg-light border"><?= htmlspecialchars($category['type'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                    <td><code><?= htmlspecialchars($category['icon'], ENT_QUOTES, 'UTF-8') ?></code></td>
+                    <td><?= (int) $category['skill_count'] ?></td>
+                    <td><?= htmlspecialchars($category['updated'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/categories.php?edit=<?= (int) $category['id'] ?>"><i class="bi bi-pencil"></i></a>
+                        <form method="post">
+                          <input type="hidden" name="action" value="delete_category">
+                          <input type="hidden" name="category_id" value="<?= (int) $category['id'] ?>">
+                          <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Delete this category?');"><i class="bi bi-trash"></i></button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+                <?php if ($categories === []): ?><tr><td colspan="7" class="text-center text-muted py-4">No categories found.</td></tr><?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </main>

@@ -4,12 +4,15 @@ USE skill_map_system;
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
+  username VARCHAR(120) NOT NULL UNIQUE,
   email VARCHAR(190) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  role ENUM('admin','student','lecturer','staff') NOT NULL DEFAULT 'student',
+  role VARCHAR(80) NOT NULL DEFAULT 'student',
   programme VARCHAR(150) NOT NULL,
   year_level VARCHAR(50) NOT NULL,
   avatar_initials VARCHAR(8) NOT NULL,
+  gender ENUM('male','female') NOT NULL DEFAULT 'male',
+  profile_icon VARCHAR(190) NOT NULL DEFAULT 'profileicons/icons8-add-user-male-100.png',
   status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -283,11 +286,11 @@ INSERT INTO badges (name, tier, description, icon) VALUES
 ('Roadmap Runner', 'gold', 'Completed a full learning roadmap', 'bi-trophy')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
-INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, status) VALUES
-('Admin User', 'admin@gmail.com', 'admin@gmail.com', '$2y$10$wD08lmaueYT.1/QHAl63q.99WXPomKTsVyIYGKrs0bozsj.N1ALV2', 'admin', 'FDSIT', 'Staff', 'AU', 'Active'),
-('Demo Student', 'demostudent', 'student@gmail.com', '$2y$10$WAhc1B6/Ul7XRbNcXYpuD.HTMcKZqDKnCuaBqC/X7WHsHi/hYBCOy', 'student', 'Information Systems', 'Year 4', 'DS', 'Active'),
-('Demo Lecturer', 'demolecturer', 'lecturer@gmail.com', '$2y$10$SSn8Vmrxf7EQVjdxcedMG.o.hl/ehe52ODEBmviThS1y0GA57hJhG', 'lecturer', 'Information Systems', 'Staff', 'DL', 'Active'),
-('Demo Staff', 'demostaff', 'staff@gmail.com', '$2y$10$SSn8Vmrxf7EQVjdxcedMG.o.hl/ehe52ODEBmviThS1y0GA57hJhG', 'staff', 'Information Systems', 'Staff', 'ST', 'Active')
+INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES
+('Admin User', 'admin@gmail.com', 'admin@gmail.com', '$2y$10$wD08lmaueYT.1/QHAl63q.99WXPomKTsVyIYGKrs0bozsj.N1ALV2', 'admin', 'FDSIT', 'Staff', 'AU', 'male', 'profileicons/icons8-administrator-male-100.png', 'Active'),
+('Demo Student', 'demostudent', 'student@gmail.com', '$2y$10$WAhc1B6/Ul7XRbNcXYpuD.HTMcKZqDKnCuaBqC/X7WHsHi/hYBCOy', 'student', 'Information Systems', 'Year 4', 'DS', 'male', 'profileicons/icons8-add-user-male-100.png', 'Active'),
+('Demo Lecturer', 'demolecturer', 'lecturer@gmail.com', '$2y$10$SSn8Vmrxf7EQVjdxcedMG.o.hl/ehe52ODEBmviThS1y0GA57hJhG', 'lecturer', 'Information Systems', 'Staff', 'DL', 'male', 'profileicons/icons8-administrator-male-100.png', 'Active'),
+('Demo Staff', 'demostaff', 'staff@gmail.com', '$2y$10$SSn8Vmrxf7EQVjdxcedMG.o.hl/ehe52ODEBmviThS1y0GA57hJhG', 'staff', 'Information Systems', 'Staff', 'ST', 'male', 'profileicons/icons8-administrator-male-100.png', 'Active')
 ON DUPLICATE KEY UPDATE email = VALUES(email);
 
 INSERT INTO notifications (sender_role, recipient_role, notification_type, title, body) VALUES

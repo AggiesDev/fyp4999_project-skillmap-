@@ -1,24 +1,177 @@
 <?php
-// Skill profile editor with category tabs, star ratings, and completion tracking.
+// Student account profile and credential manager.
 
 require_once __DIR__ . '/../includes/auth_check.php';
 skillmap_require_auth(['student']);
-$activePage = 'profile';
-$data = skillmap_data()['student'];
-$message = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
-  $user = skillmap_current_user();
-  $ratings = is_array($_POST['ratings'] ?? null) ? $_POST['ratings'] : [];
-  if ($user && skillmap_save_profile((int) $user['id'], $ratings)) {
-    $message = 'Profile saved successfully.';
-    $data = skillmap_data()['student'];
-  } else {
-    $message = 'Unable to save profile changes.';
-  }
+$activePage = 'profile';
+$user = skillmap_current_user();
+$userId = (int) ($user['id'] ?? 0);
+$message = '';
+$error = '';
+
+function profile_fetch_credentials(PDO $pdo, int $userId): array
+{
+    $stmt = $pdo->prepare(
+        'SELECT id, entry_type, title, issuer, notes, earned_at
+         FROM user_credentials
+         WHERE user_id = :user_id
+         ORDER BY created_at DESC'
+    );
+    $stmt->execute(['user_id' => $userId]);
+    return $stmt->fetchAll();
 }
 
-$activeCategory = array_key_first($data['profile_skills']);
+function profile_fetch_user(PDO $pdo, int $userId): ?array
+{
+    $stmt = $pdo->prepare(
+        'SELECT id, name, username, email, role, programme, year_level, avatar_initials, gender, profile_icon, status
+         FROM users
+         WHERE id = :id
+         LIMIT 1'
+    );
+    $stmt->execute(['id' => $userId]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function profile_fetch_credential(PDO $pdo, int $userId, int $credentialId): ?array
+{
+    if ($credentialId <= 0) {
+        return null;
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT id, entry_type, title, issuer, notes, earned_at
+         FROM user_credentials
+         WHERE id = :id AND user_id = :user_id
+         LIMIT 1'
+    );
+    $stmt->execute(['id' => $credentialId, 'user_id' => $userId]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function profile_render_icon_choices(string $selectedIcon): void
+{
+    foreach (skillmap_profile_icon_options() as $group => $icons) {
+        echo '<div class="small fw-semibold text-muted text-capitalize mt-3 mb-2">' . htmlspecialchars($group, ENT_QUOTES, 'UTF-8') . '</div>';
+        echo '<div class="profile-icon-grid">';
+        foreach ($icons as $icon) {
+            $checked = $selectedIcon === $icon ? 'checked' : '';
+            echo '<label class="profile-icon-choice">';
+            echo '<input type="radio" name="profile_icon" value="' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . '" ' . $checked . '>';
+            echo '<img src="/fyp_skillmapsystem/' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . '" alt="">';
+            echo '</label>';
+        }
+        echo '</div>';
+    }
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    $action = (string) ($_POST['action'] ?? '');
+
+    if ($action === 'update_profile') {
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $programme = trim((string) ($_POST['programme'] ?? ''));
+        $yearLevel = trim((string) ($_POST['year_level'] ?? ''));
+        $gender = skillmap_normalize_gender((string) ($_POST['gender'] ?? 'male'));
+        $profileIcon = skillmap_sanitize_profile_icon((string) ($_POST['profile_icon'] ?? ''), $gender, (string) ($user['role'] ?? 'student'));
+
+        if ($name === '' || $programme === '' || $yearLevel === '') {
+            $error = 'Name, programme, and year level are required.';
+        } else {
+            $initials = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name) ?: 'SM', 0, 2));
+            $stmt = $pdo->prepare(
+                'UPDATE users
+                 SET name = :name, programme = :programme, year_level = :year_level,
+                     avatar_initials = :avatar_initials, gender = :gender, profile_icon = :profile_icon
+                 WHERE id = :id'
+            );
+            $stmt->execute([
+                'name' => $name,
+                'programme' => $programme,
+                'year_level' => $yearLevel,
+                'avatar_initials' => $initials,
+                'gender' => $gender,
+                'profile_icon' => $profileIcon,
+                'id' => $userId,
+            ]);
+
+            $freshUser = profile_fetch_user($pdo, $userId);
+            if ($freshUser) {
+                set_authenticated_user($freshUser);
+                $user = skillmap_current_user();
+            }
+
+            $message = 'Profile updated successfully.';
+        }
+    }
+
+    if ($action === 'save_credential') {
+        $credentialId = (int) ($_POST['credential_id'] ?? 0);
+        $entryType = (string) ($_POST['entry_type'] ?? 'Skill');
+        $entryType = in_array($entryType, ['Skill', 'Certification'], true) ? $entryType : 'Skill';
+        $title = trim((string) ($_POST['title'] ?? ''));
+        $issuer = trim((string) ($_POST['issuer'] ?? ''));
+        $notes = trim((string) ($_POST['notes'] ?? ''));
+        $earnedAt = trim((string) ($_POST['earned_at'] ?? ''));
+        $earnedAt = $earnedAt !== '' ? $earnedAt : null;
+
+        if ($title === '') {
+            $error = 'Credential title is required.';
+        } elseif ($credentialId > 0) {
+            $stmt = $pdo->prepare(
+                'UPDATE user_credentials
+                 SET entry_type = :entry_type, title = :title, issuer = :issuer, notes = :notes, earned_at = :earned_at
+                 WHERE id = :id AND user_id = :user_id'
+            );
+            $stmt->execute([
+                'entry_type' => $entryType,
+                'title' => $title,
+                'issuer' => $issuer !== '' ? $issuer : null,
+                'notes' => $notes !== '' ? $notes : null,
+                'earned_at' => $earnedAt,
+                'id' => $credentialId,
+                'user_id' => $userId,
+            ]);
+            $message = 'Credential updated successfully.';
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO user_credentials (user_id, entry_type, title, issuer, notes, earned_at)
+                 VALUES (:user_id, :entry_type, :title, :issuer, :notes, :earned_at)'
+            );
+            $stmt->execute([
+                'user_id' => $userId,
+                'entry_type' => $entryType,
+                'title' => $title,
+                'issuer' => $issuer !== '' ? $issuer : null,
+                'notes' => $notes !== '' ? $notes : null,
+                'earned_at' => $earnedAt,
+            ]);
+            $message = 'Credential added successfully.';
+        }
+    }
+
+    if ($action === 'delete_credential') {
+        $credentialId = (int) ($_POST['credential_id'] ?? 0);
+        if ($credentialId > 0) {
+            $stmt = $pdo->prepare('DELETE FROM user_credentials WHERE id = :id AND user_id = :user_id');
+            $stmt->execute(['id' => $credentialId, 'user_id' => $userId]);
+            $message = 'Credential deleted successfully.';
+        }
+    }
+}
+
+$profile = profile_fetch_user($pdo, $userId);
+if (!$profile) {
+    header('Location: /fyp_skillmapsystem/logout.php');
+    exit;
+}
+
+$selectedIcon = skillmap_sanitize_profile_icon((string) ($profile['profile_icon'] ?? ''), (string) ($profile['gender'] ?? 'male'), (string) $profile['role']);
+$credentials = profile_fetch_credentials($pdo, $userId);
+$editCredential = profile_fetch_credential($pdo, $userId, (int) ($_GET['edit_credential'] ?? 0));
 ?>
 <!doctype html>
 <html lang="en">
@@ -33,53 +186,179 @@ $activeCategory = array_key_first($data['profile_skills']);
 <body>
   <?php require __DIR__ . '/includes/navbar.php'; ?>
   <main class="container py-4 py-lg-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div><h1 class="fw-bold mb-0">My Skill Profile</h1><div class="text-muted">Review and update your self-assessment ratings</div></div>
-      <button form="profileForm" type="submit" name="save_profile" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Save Profile</button>
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+      <div>
+        <h1 class="fw-bold mb-1">My Profile</h1>
+        <div class="text-muted">Manage your profile details separately from your skills and certifications.</div>
+      </div>
+      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/skills_assessment.php">
+        <i class="bi bi-stars me-1"></i>Skill Assessment
+      </a>
     </div>
+
     <?php if ($message !== ''): ?>
-      <div class="alert alert-info"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div>
+      <div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
-    <div class="row g-4">
-      <div class="col-lg-8">
-        <form id="profileForm" method="post"><div class="card"><div class="card-body p-4">
-          <ul class="nav nav-pills flex-wrap gap-2 mb-4">
-            <?php foreach (array_keys($data['profile_skills']) as $category): ?>
-              <li class="nav-item"><button type="button" class="nav-link <?= $category === $activeCategory ? 'active' : 'bg-light text-dark' ?>" data-skillmap-tab="<?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></button></li>
-            <?php endforeach; ?>
-          </ul>
-          <?php foreach ($data['profile_skills'] as $category => $skills): ?>
-            <div data-skillmap-tab-panel="<?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>" class="<?= $category === $activeCategory ? '' : 'd-none' ?>">
-              <div class="d-grid gap-3">
-                <?php foreach ($skills as $skill): ?>
-                  <div class="border rounded-4 p-3 p-md-4">
-                    <div class="d-flex justify-content-between align-items-start gap-3">
-                      <div>
-                        <div class="fw-bold"><?= htmlspecialchars($skill['name'], ENT_QUOTES, 'UTF-8') ?></div>
-                        <div class="text-muted small"><?= htmlspecialchars($skill['description'], ENT_QUOTES, 'UTF-8') ?></div>
-                      </div>
-                      <?= skillmap_rating_badge($skill['score']) ?>
-                    </div>
-                    <div class="d-flex align-items-center gap-3 mt-3">
-                      <?= skillmap_star_rating($skill['score']) ?>
-                      <input type="hidden" class="skill-rating-value" name="ratings[<?= (int) $skill['id'] ?>]" value="<?= (int) $skill['score'] ?>">
-                    </div>
-                  </div>
-                <?php endforeach; ?>
+    <?php if ($error !== ''): ?>
+      <div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
+
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-5">
+        <form method="post" class="card">
+          <div class="card-body p-4">
+            <input type="hidden" name="action" value="update_profile">
+            <div class="d-flex align-items-center gap-3 mb-4">
+              <div class="text-center">
+                <img class="profile-icon-preview" src="/fyp_skillmapsystem/<?= htmlspecialchars($selectedIcon, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                <button class="btn btn-sm btn-outline-primary mt-2" type="button" data-toggle-panel="profileIconPanel">
+                  <i class="bi bi-images me-1"></i>Change User Icon
+                </button>
+              </div>
+              <div>
+                <h2 class="h5 fw-bold mb-1">Profile Details</h2>
+                <div class="text-muted small"><?= htmlspecialchars($profile['email'], ENT_QUOTES, 'UTF-8') ?></div>
               </div>
             </div>
-          <?php endforeach; ?>
-        </div></div></form>
+
+            <div class="d-grid gap-3">
+              <div>
+                <label class="form-label">Full Name</label>
+                <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($profile['name'], ENT_QUOTES, 'UTF-8') ?>" required>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Gender</label>
+                  <select name="gender" class="form-select" data-profile-gender>
+                    <option value="male" <?= $profile['gender'] === 'male' ? 'selected' : '' ?>>Male</option>
+                    <option value="female" <?= $profile['gender'] === 'female' ? 'selected' : '' ?>>Female</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Role</label>
+                  <input type="text" class="form-control text-capitalize" value="<?= htmlspecialchars($profile['role'], ENT_QUOTES, 'UTF-8') ?>" readonly>
+                </div>
+              </div>
+              <div id="profileIconPanel" class="d-none">
+                <label class="form-label">Profile Icon</label>
+                <?php profile_render_icon_choices($selectedIcon); ?>
+              </div>
+              <div>
+                <label class="form-label">Programme</label>
+                <input type="text" name="programme" class="form-control" value="<?= htmlspecialchars($profile['programme'], ENT_QUOTES, 'UTF-8') ?>" required>
+              </div>
+              <div>
+                <label class="form-label">Year Level</label>
+                <input type="text" name="year_level" class="form-control" value="<?= htmlspecialchars($profile['year_level'], ENT_QUOTES, 'UTF-8') ?>" required>
+              </div>
+              <div>
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" value="<?= htmlspecialchars($profile['username'], ENT_QUOTES, 'UTF-8') ?>" readonly>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer bg-white border-0 p-4 pt-0">
+            <button class="btn btn-primary w-100" type="submit">
+              <i class="bi bi-check2 me-1"></i>Save Profile
+            </button>
+          </div>
+        </form>
       </div>
-      <div class="col-lg-4">
-        <div class="card mb-4"><div class="card-body p-4 text-center"><h2 class="h5 fw-bold mb-3">Profile Completion</h2><?= skillmap_progress_ring($data['profile_completion']) ?><ul class="list-group list-group-flush text-start mt-4"><?php foreach ($data['profile_categories'] as $category): ?><li class="list-group-item d-flex justify-content-between align-items-center px-0"><span><?= htmlspecialchars($category['name'], ENT_QUOTES, 'UTF-8') ?></span><span class="badge rounded-pill <?= $category['done'] ? 'text-bg-success' : 'text-bg-light border text-muted' ?>"><?= $category['done'] ? '<i class="bi bi-check2"></i>' : '<i class="bi bi-circle"></i>' ?></span></li><?php endforeach; ?></ul></div></div>
-        <div class="alert skillmap-yellow-banner rounded-4 border-0 mb-0"><div class="d-flex gap-3"><i class="bi bi-lightbulb-fill text-warning fs-4"></i><div><strong>Tip</strong><div class="small">Rate all skills honestly first. Your roadmap becomes more accurate when the profile is complete.</div></div></div></div>
+
+      <div class="col-lg-7">
+        <div class="card mb-4">
+          <div class="card-body p-4">
+            <h2 class="h5 fw-bold mb-3"><?= $editCredential ? 'Edit Skill or Certification' : 'Add Skill or Certification' ?></h2>
+            <form method="post" class="row g-3">
+              <input type="hidden" name="action" value="save_credential">
+              <input type="hidden" name="credential_id" value="<?= (int) ($editCredential['id'] ?? 0) ?>">
+              <div class="col-md-4">
+                <label class="form-label">Type</label>
+                <?php $entryType = (string) ($editCredential['entry_type'] ?? 'Skill'); ?>
+                <select name="entry_type" class="form-select">
+                  <option value="Skill" <?= $entryType === 'Skill' ? 'selected' : '' ?>>Skill</option>
+                  <option value="Certification" <?= $entryType === 'Certification' ? 'selected' : '' ?>>Certification</option>
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" value="<?= htmlspecialchars((string) ($editCredential['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Issuer</label>
+                <input type="text" name="issuer" class="form-control" value="<?= htmlspecialchars((string) ($editCredential['issuer'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Earned Date</label>
+                <input type="date" name="earned_at" class="form-control" value="<?= htmlspecialchars((string) ($editCredential['earned_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <textarea name="notes" class="form-control" rows="3"><?= htmlspecialchars((string) ($editCredential['notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+              </div>
+              <div class="col-12 d-flex flex-wrap gap-2">
+                <button class="btn btn-success" type="submit">
+                  <i class="bi <?= $editCredential ? 'bi-check2' : 'bi-plus-lg' ?> me-1"></i><?= $editCredential ? 'Update Credential' : 'Add Credential' ?>
+                </button>
+                <?php if ($editCredential): ?>
+                  <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/profile.php">Cancel Edit</a>
+                <?php endif; ?>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h5 fw-bold mb-0">Credentials</h2>
+              <span class="badge text-bg-light border"><?= count($credentials) ?> total</span>
+            </div>
+
+            <?php if ($credentials === []): ?>
+              <div class="alert alert-light border mb-0">No skills or certifications added yet.</div>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                  <thead><tr><th>Type</th><th>Title</th><th>Issuer</th><th>Earned</th><th class="text-end">Actions</th></tr></thead>
+                  <tbody>
+                    <?php foreach ($credentials as $credential): ?>
+                      <tr>
+                        <td><span class="badge text-bg-light border"><?= htmlspecialchars($credential['entry_type'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                        <td>
+                          <div class="fw-semibold"><?= htmlspecialchars($credential['title'], ENT_QUOTES, 'UTF-8') ?></div>
+                          <?php if ((string) $credential['notes'] !== ''): ?>
+                            <div class="small text-muted"><?= htmlspecialchars((string) $credential['notes'], ENT_QUOTES, 'UTF-8') ?></div>
+                          <?php endif; ?>
+                        </td>
+                        <td><?= htmlspecialchars((string) ($credential['issuer'] ?: '-'), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) ($credential['earned_at'] ?: '-'), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td>
+                          <div class="d-flex justify-content-end gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/users/profile.php?edit_credential=<?= (int) $credential['id'] ?>" title="Edit">
+                              <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="post">
+                              <input type="hidden" name="action" value="delete_credential">
+                              <input type="hidden" name="credential_id" value="<?= (int) $credential['id'] ?>">
+                              <button class="btn btn-sm btn-outline-danger" type="submit" title="Delete" onclick="return confirm('Delete this credential?');">
+                                <i class="bi bi-trash"></i>
+                              </button>
+                            </form>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
+        </div>
       </div>
     </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>
-  <script src="/fyp_skillmapsystem/assets/js/charts.js"></script>
 </body>
 </html>

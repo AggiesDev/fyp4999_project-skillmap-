@@ -1,10 +1,118 @@
 <?php
-// Admin skill library page for skill records and usage auditing.
+// Admin skill library CRUD.
 
 require_once __DIR__ . '/../includes/auth_check.php';
-skillmap_require_auth(['admin']);
+skillmap_require_permission('manage_skills');
+
 $activePage = 'skill_library';
-$data = skillmap_data()['admin']['skills'];
+$message = '';
+$error = '';
+$editSkill = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = (string) ($_POST['action'] ?? '');
+
+    if ($action === 'save_skill') {
+        $skillId = (int) ($_POST['skill_id'] ?? 0);
+        $categoryId = (int) ($_POST['category_id'] ?? 0);
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $description = trim((string) ($_POST['description'] ?? ''));
+        $difficulty = max(1, min(5, (int) ($_POST['difficulty'] ?? 1)));
+        $status = (string) ($_POST['status'] ?? 'Active');
+        $status = in_array($status, ['Active', 'Inactive'], true) ? $status : 'Active';
+
+        $categoryCheck = $pdo->prepare('SELECT id FROM skill_categories WHERE id = :id AND type = "Skill Category" LIMIT 1');
+        $categoryCheck->execute(['id' => $categoryId]);
+
+        if ($name === '' || $description === '') {
+            $error = 'Skill name and description are required.';
+        } elseif (!$categoryCheck->fetch()) {
+            $error = 'Please choose a valid skill category.';
+        } else {
+            try {
+                if ($skillId > 0) {
+                    $stmt = $pdo->prepare(
+                        'UPDATE skills
+                         SET category_id = :category_id, name = :name, description = :description, difficulty = :difficulty, status = :status
+                         WHERE id = :id'
+                    );
+                    $stmt->execute([
+                        'category_id' => $categoryId,
+                        'name' => $name,
+                        'description' => $description,
+                        'difficulty' => $difficulty,
+                        'status' => $status,
+                        'id' => $skillId,
+                    ]);
+                    $message = 'Skill updated successfully.';
+                } else {
+                    $stmt = $pdo->prepare(
+                        'INSERT INTO skills (category_id, name, description, difficulty, status)
+                         VALUES (:category_id, :name, :description, :difficulty, :status)'
+                    );
+                    $stmt->execute([
+                        'category_id' => $categoryId,
+                        'name' => $name,
+                        'description' => $description,
+                        'difficulty' => $difficulty,
+                        'status' => $status,
+                    ]);
+                    $message = 'Skill created successfully.';
+                }
+            } catch (PDOException $exception) {
+                $error = $exception->getCode() === '23000' ? 'A skill with this name already exists.' : 'Unable to save skill.';
+            }
+        }
+    }
+
+    if ($action === 'delete_skill') {
+        $skillId = (int) ($_POST['skill_id'] ?? 0);
+        $dependencySql = [
+            'user_skill_ratings' => 'SELECT COUNT(*) FROM user_skill_ratings WHERE skill_id = :id',
+            'role_skill_benchmarks' => 'SELECT COUNT(*) FROM role_skill_benchmarks WHERE skill_id = :id',
+            'analysis_results' => 'SELECT COUNT(*) FROM analysis_results WHERE skill_id = :id',
+            'learning_resources' => 'SELECT COUNT(*) FROM learning_resources WHERE skill_id = :id',
+            'user_roadmap_progress' => 'SELECT COUNT(*) FROM user_roadmap_progress WHERE skill_id = :id',
+        ];
+        $hasDependents = false;
+        foreach ($dependencySql as $sql) {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(['id' => $skillId]);
+            if ((int) $stmt->fetchColumn() > 0) {
+                $hasDependents = true;
+                break;
+            }
+        }
+
+        if ($hasDependents) {
+            $error = 'This skill is already referenced. Set it inactive instead of deleting it.';
+        } elseif ($skillId > 0) {
+            $stmt = $pdo->prepare('DELETE FROM skills WHERE id = :id');
+            $stmt->execute(['id' => $skillId]);
+            $message = 'Skill deleted successfully.';
+        }
+    }
+}
+
+$editId = (int) ($_GET['edit'] ?? 0);
+if ($editId > 0) {
+    $stmt = $pdo->prepare('SELECT id, category_id, name, description, difficulty, status FROM skills WHERE id = :id LIMIT 1');
+    $stmt->execute(['id' => $editId]);
+    $editSkill = $stmt->fetch() ?: null;
+}
+
+$categories = $pdo->query('SELECT id, name, icon FROM skill_categories WHERE type = "Skill Category" ORDER BY name')->fetchAll();
+$skills = $pdo->query(
+    'SELECT s.id, s.name, s.description, s.difficulty, s.status, c.name AS category, c.icon,
+            COUNT(DISTINCT rb.role_id) AS role_count,
+            COUNT(DISTINCT r.user_id) AS rating_count
+     FROM skills s
+     INNER JOIN skill_categories c ON c.id = s.category_id
+     LEFT JOIN role_skill_benchmarks rb ON rb.skill_id = s.id
+     LEFT JOIN user_skill_ratings r ON r.skill_id = s.id
+     GROUP BY s.id
+     ORDER BY c.name, s.name'
+)->fetchAll();
 ?>
 <!doctype html>
 <html lang="en">
@@ -19,13 +127,72 @@ $data = skillmap_data()['admin']['skills'];
 <body>
   <?php require __DIR__ . '/includes/navbar.php'; ?>
   <main class="container-fluid py-4 py-lg-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+      <div>
+        <h1 class="fw-bold mb-1">Skill Library</h1>
+        <div class="text-muted">Create and maintain the skills used by assessments and benchmarks</div>
+      </div>
+      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/categories.php">Manage Categories</a>
+    </div>
+
+    <?php if ($message !== ''): ?><div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+    <?php if ($error !== ''): ?><div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+
     <div class="row g-4">
-      <div class="col-12">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><h1 class="fw-bold mb-1">Skill Library</h1><div class="text-muted">Central catalog of all mapped capabilities</div></div><div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/permissions.php">Export CSV</a><a class="btn btn-success" href="/fyp_skillmapsystem/admin/reviews.php">Add New Skill</a></div></div>
-        <div class="row g-3 mb-4"><div class="col-md-3"><div class="card"><div class="card-body"><div class="text-muted small">Total Skills</div><div class="fs-3 fw-bold"><?= count($data) ?></div></div></div></div><div class="col-md-3"><div class="card"><div class="card-body"><div class="text-muted small">Technical</div><div class="fs-3 fw-bold"><?= count($data) ?></div></div></div></div><div class="col-md-3"><div class="card"><div class="card-body"><div class="text-muted small">Leadership</div><div class="fs-3 fw-bold">12</div></div></div></div><div class="col-md-3"><div class="card"><div class="card-body"><div class="text-muted small">Active Skills</div><div class="fs-3 fw-bold">5</div></div></div></div></div>
-        <div class="d-flex flex-wrap gap-2 mb-3" data-table-filter-group><?php foreach (['All', 'Technical', 'Leadership', 'Interpersonal', 'Academic'] as $filter): ?><button type="button" class="btn btn-sm btn-outline-primary <?= $filter === 'All' ? 'active' : '' ?>" data-table-filter-target="#skillLibraryTable" data-table-filter="<?= htmlspecialchars(strtolower($filter), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($filter, ENT_QUOTES, 'UTF-8') ?></button><?php endforeach; ?></div>
-        <div class="input-group mb-3" style="max-width: 360px;"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" placeholder="Search skills..."></div>
-        <div class="card"><div class="table-responsive"><table id="skillLibraryTable" class="table align-middle mb-0"><thead><tr><th>#</th><th>Skill Name</th><th>Category</th><th>Description</th><th>Difficulty</th><th>Used In Roles</th><th>Status</th><th>Actions</th></tr></thead><tbody><?php foreach ($data as $index => $skill): ?><tr data-filter-value="<?= htmlspecialchars($skill['category'], ENT_QUOTES, 'UTF-8') ?>"><td><?= $index + 1 ?></td><td class="fw-semibold"><?= htmlspecialchars($skill['name'], ENT_QUOTES, 'UTF-8') ?></td><td><span class="badge badge-soft rounded-pill"><?= htmlspecialchars($skill['category'], ENT_QUOTES, 'UTF-8') ?></span></td><td><?= htmlspecialchars($skill['description'], ENT_QUOTES, 'UTF-8') ?></td><td><?= str_repeat('<span class="text-warning"><i class="bi bi-dot"></i></span>', $skill['difficulty']) ?></td><td><?php foreach ($skill['roles'] as $role): ?><span class="badge text-bg-light border me-1 mb-1"><?= htmlspecialchars($role, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?></td><td><?= skillmap_status_badge($skill['status']) ?></td><td><a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/reviews.php"><i class="bi bi-pencil"></i></a> <a class="btn btn-sm btn-outline-danger" href="/fyp_skillmapsystem/admin/permissions.php"><i class="bi bi-trash"></i></a></td></tr><?php endforeach; ?></tbody></table></div></div>
+      <div class="col-xl-4">
+        <form method="post" class="card">
+          <div class="card-body p-4">
+            <input type="hidden" name="action" value="save_skill">
+            <input type="hidden" name="skill_id" value="<?= (int) ($editSkill['id'] ?? 0) ?>">
+            <h2 class="h5 fw-bold mb-3"><?= $editSkill ? 'Edit Skill' : 'Add Skill' ?></h2>
+            <div class="d-grid gap-3">
+              <div><label class="form-label">Skill Name</label><input name="name" class="form-control" value="<?= htmlspecialchars((string) ($editSkill['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></div>
+              <div><label class="form-label">Category</label><select name="category_id" class="form-select" required><?php foreach ($categories as $category): ?><option value="<?= (int) $category['id'] ?>" <?= (int) ($editSkill['category_id'] ?? 0) === (int) $category['id'] ? 'selected' : '' ?>><?= htmlspecialchars($category['name'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
+              <div><label class="form-label">Description</label><textarea name="description" class="form-control" rows="4" required><?= htmlspecialchars((string) ($editSkill['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea></div>
+              <div class="row g-3">
+                <div class="col-md-6"><label class="form-label">Difficulty</label><select name="difficulty" class="form-select"><?php for ($i = 1; $i <= 5; $i++): ?><option value="<?= $i ?>" <?= (int) ($editSkill['difficulty'] ?? 1) === $i ? 'selected' : '' ?>><?= $i ?>/5</option><?php endfor; ?></select></div>
+                <div class="col-md-6"><label class="form-label">Status</label><select name="status" class="form-select"><option value="Active" <?= ($editSkill['status'] ?? 'Active') === 'Active' ? 'selected' : '' ?>>Active</option><option value="Inactive" <?= ($editSkill['status'] ?? '') === 'Inactive' ? 'selected' : '' ?>>Inactive</option></select></div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer bg-white border-0 p-4 pt-0 d-flex gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save Skill</button>
+            <?php if ($editSkill): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/skill_library.php">Cancel</a><?php endif; ?>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-xl-8">
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0" id="skillLibraryTable">
+              <thead><tr><th>#</th><th>Skill</th><th>Category</th><th>Difficulty</th><th>Usage</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                <?php foreach ($skills as $index => $skill): ?>
+                  <tr data-filter-value="<?= htmlspecialchars(strtolower($skill['category']), ENT_QUOTES, 'UTF-8') ?>">
+                    <td><?= $index + 1 ?></td>
+                    <td><div class="fw-semibold"><?= htmlspecialchars($skill['name'], ENT_QUOTES, 'UTF-8') ?></div><div class="small text-muted"><?= htmlspecialchars($skill['description'], ENT_QUOTES, 'UTF-8') ?></div></td>
+                    <td><span class="badge badge-soft rounded-pill"><i class="bi <?= htmlspecialchars($skill['icon'], ENT_QUOTES, 'UTF-8') ?> me-1"></i><?= htmlspecialchars($skill['category'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                    <td><?= str_repeat('<i class="bi bi-star-fill text-warning"></i>', (int) $skill['difficulty']) ?></td>
+                    <td><span class="badge text-bg-light border"><?= (int) $skill['role_count'] ?> roles</span> <span class="badge text-bg-light border"><?= (int) $skill['rating_count'] ?> ratings</span></td>
+                    <td><?= skillmap_status_badge($skill['status']) ?></td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/skill_library.php?edit=<?= (int) $skill['id'] ?>"><i class="bi bi-pencil"></i></a>
+                        <form method="post">
+                          <input type="hidden" name="action" value="delete_skill">
+                          <input type="hidden" name="skill_id" value="<?= (int) $skill['id'] ?>">
+                          <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Delete this skill?');"><i class="bi bi-trash"></i></button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+                <?php if ($skills === []): ?><tr><td colspan="7" class="text-center text-muted py-4">No skills found.</td></tr><?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </main>

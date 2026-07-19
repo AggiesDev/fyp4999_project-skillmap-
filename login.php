@@ -3,38 +3,41 @@
 
 require_once __DIR__ . '/includes/functions.php';
 
-$demoLogin = '';
 $error = '';
+$message = '';
 $activeTab = $_POST['tab'] ?? 'login';
+$registrationOptions = skillmap_registration_options();
+$currentYear = date('Y');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (isset($_POST['register_submit'])) {
         $user = skillmap_register($_POST);
         if ($user) {
-            $_SESSION['user'] = $user;
-      $destination = $user['role'] === 'admin'
-        ? '/fyp_skillmapsystem/admin/analytics.php'
-        : (in_array($user['role'], ['lecturer', 'staff'], true) ? '/fyp_skillmapsystem/admin/reviews.php' : '/fyp_skillmapsystem/users/dashboard.php');
-      header('Location: ' . $destination);
-            exit;
+            if (($user['status'] ?? 'Active') === 'Inactive') {
+                $message = 'Your account was created and is waiting for admin approval.';
+                $activeTab = 'login';
+            } else {
+                $_SESSION['user'] = $user;
+                $destination = skillmap_default_destination($user);
+                header('Location: ' . $destination);
+                exit;
+            }
         }
-        $error = 'Please complete all registration fields.';
-        $activeTab = 'register';
+        if ($message === '') {
+            $error = 'Please complete all registration fields, or use a unique email and username.';
+            $activeTab = 'register';
+        }
     } elseif (isset($_POST['login_submit'])) {
         $user = skillmap_login(trim((string) ($_POST['email'] ?? '')), (string) ($_POST['password'] ?? ''));
         if ($user) {
             $_SESSION['user'] = $user;
-      $destination = $user['role'] === 'admin'
-        ? '/fyp_skillmapsystem/admin/analytics.php'
-        : (in_array($user['role'], ['lecturer', 'staff'], true) ? '/fyp_skillmapsystem/admin/reviews.php' : '/fyp_skillmapsystem/users/dashboard.php');
-      header('Location: ' . $destination);
+            $destination = skillmap_default_destination($user);
+            header('Location: ' . $destination);
             exit;
         }
         $error = 'Invalid email or password.';
     }
 }
-
-$demoLogin = 'Demo: enter admin@utm.my to access the admin view';
 ?>
 <!doctype html>
 <html lang="en">
@@ -42,153 +45,232 @@ $demoLogin = 'Demo: enter admin@utm.my to access the admin view';
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Skill Map</title>
+  <link rel="icon" type="image/png" href="/fyp_skillmapsystem/SkillMapLogoPackage/favicon/favicon-32x32.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="/fyp_skillmapsystem/assets/css/style.css" rel="stylesheet">
 </head>
-<body>
-  <div class="container-fluid skillmap-auth-shell">
-    <div class="row min-vh-100 g-0">
-      <div class="col-lg-7 skillmap-auth-left d-flex align-items-center p-4 p-md-5">
-        <div class="w-100 position-relative">
-          <div class="d-flex align-items-center gap-3 mb-4">
-            <div class="skillmap-brand-mark"><i class="bi bi-map-fill"></i></div>
+<body class="skillmap-auth-page">
+  <main class="skillmap-auth-shell">
+    <section class="skillmap-auth-brand-panel">
+      <div class="skillmap-auth-topbar">
+        <img class="skillmap-login-logo" src="/fyp_skillmapsystem/SkillMapLogoPackage/logo-full/logo-transparent-512w.png" alt="Skill Map">
+        <span class="skillmap-auth-institution">Universiti Teknologi Malaysia</span>
+      </div>
+
+      <div class="skillmap-auth-hero">
+        <span class="skillmap-auth-kicker">FYP4999 · FDSIT</span>
+        <h1>Map your skills, close the gaps, and move with a clearer plan.</h1>
+        <p>Skill Map helps students compare their current skills with target roles, build a learning roadmap, and share progress with lecturers or administrators.</p>
+      </div>
+
+      <div class="skillmap-auth-showcase">
+        <div class="skillmap-showcase-main">
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
             <div>
-              <h1 class="h2 fw-bold mb-0">Skill Map</h1>
-              <div class="text-muted">Information Systems FYP4999 · FDSIT</div>
+              <div class="small text-muted">Readiness snapshot</div>
+              <div class="display-6 fw-bold">82%</div>
+            </div>
+            <span class="badge text-bg-primary rounded-pill">AI Assisted</span>
+          </div>
+          <div class="d-grid gap-3">
+            <div>
+              <div class="d-flex justify-content-between small mb-1"><span>Skill Assessment</span><span>Complete</span></div>
+              <div class="progress"><div class="progress-bar bg-success" style="width: 92%"></div></div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between small mb-1"><span>Target Role Match</span><span>82%</span></div>
+              <div class="progress"><div class="progress-bar" style="width: 82%"></div></div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between small mb-1"><span>Roadmap Progress</span><span>64%</span></div>
+              <div class="progress"><div class="progress-bar bg-warning" style="width: 64%"></div></div>
             </div>
           </div>
-          <div class="row align-items-center g-4">
-            <div class="col-xl-6">
-              <h2 class="display-6 fw-bold mb-3">Discover your gaps. Build your future.</h2>
-              <p class="lead text-muted-strong mb-4">Personalised skill analysis for university students, lecturers, and administrators.</p>
-              <ul class="list-unstyled d-grid gap-3">
-                <li class="d-flex gap-3"><i class="bi bi-check-circle-fill text-primary"></i><span>Personalised AI skill gap reports</span></li>
-                <li class="d-flex gap-3"><i class="bi bi-check-circle-fill text-primary"></i><span>Curated learning roadmaps</span></li>
-                <li class="d-flex gap-3"><i class="bi bi-check-circle-fill text-primary"></i><span>Leadership &amp; career benchmarks</span></li>
-              </ul>
-            </div>
-            <div class="col-xl-6">
-              <div class="position-relative d-flex justify-content-center py-4">
-                <div class="skillmap-floating-card" style="top:0;left:5%;"><i class="bi bi-award"></i></div>
-                <div class="skillmap-floating-card" style="top:8%;right:4%;"><i class="bi bi-bar-chart"></i></div>
-                <div class="skillmap-floating-card" style="bottom:12%;left:0;"><i class="bi bi-key"></i></div>
-                <div class="skillmap-floating-card" style="bottom:8%;right:0;"><i class="bi bi-bullseye"></i></div>
-                <div class="skillmap-laptop">
-                  <div class="skillmap-laptop-screen">
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                      <span class="badge text-bg-primary">Skill Map</span>
-                      <span class="badge text-bg-light border">FYP4999</span>
-                    </div>
-                    <div class="row g-3">
-                      <div class="col-7">
-                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-                          <div class="small text-muted">Gap overview</div>
-                          <div class="fw-bold fs-4">82% match</div>
-                          <div class="progress mt-3"><div class="progress-bar bg-primary" style="width:82%"></div></div>
-                        </div>
-                      </div>
-                      <div class="col-5">
-                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 d-flex align-items-center justify-content-center">
-                          <i class="bi bi-code-slash fs-1 text-primary"></i>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="mt-3 small text-muted">Track your readiness, close your skill gaps, and export a polished report.</div>
+        </div>
+        <div class="skillmap-showcase-strip">
+          <div><i class="bi bi-stars"></i><span>Assess</span></div>
+          <div><i class="bi bi-bullseye"></i><span>Analyse</span></div>
+          <div><i class="bi bi-map"></i><span>Improve</span></div>
+        </div>
+      </div>
+
+      <div class="skillmap-auth-footer">Develop by Aggies · &copy; <?= htmlspecialchars($currentYear, ENT_QUOTES, 'UTF-8') ?> Skill Map License. All rights reserved.</div>
+    </section>
+
+    <section class="skillmap-auth-form-panel">
+      <div class="skillmap-auth-card">
+        <div class="text-center mb-4">
+          <img class="skillmap-auth-card-logo" src="/fyp_skillmapsystem/SkillMapLogoPackage/app-icons/icon-128x128.png" alt="">
+          <h2 class="h4 fw-bold mb-1">Welcome</h2>
+          <div class="text-muted small">Login or create your Skill Map account</div>
+        </div>
+
+        <ul class="nav nav-pills nav-fill skillmap-auth-tabs mb-4" id="authTabs" role="tablist">
+          <li class="nav-item" role="presentation"><button class="nav-link <?= $activeTab === 'login' ? 'active' : '' ?>" data-bs-toggle="pill" data-bs-target="#loginPane" type="button">Login</button></li>
+          <li class="nav-item" role="presentation"><button class="nav-link <?= $activeTab === 'register' ? 'active' : '' ?>" data-bs-toggle="pill" data-bs-target="#registerPane" type="button">Create Account</button></li>
+        </ul>
+
+        <?php if ($error !== ''): ?>
+          <div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($message !== ''): ?>
+          <div class="alert alert-info"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+
+        <div class="tab-content">
+          <div class="tab-pane fade <?= $activeTab === 'login' ? 'show active' : '' ?>" id="loginPane">
+            <form method="post" class="d-grid gap-3">
+              <input type="hidden" name="tab" value="login">
+              <div>
+                <label class="form-label">Email Address or Username</label>
+                <input type="text" name="email" class="form-control form-control-lg" placeholder="student@utm.my or demostudent" required>
+              </div>
+              <div>
+                <label class="form-label">Password</label>
+                <div class="input-group input-group-lg">
+                  <input type="password" name="password" id="loginPassword" class="form-control" required>
+                  <button class="btn btn-outline-secondary" type="button" data-toggle-password="loginPassword"><i class="bi bi-eye-slash"></i></button>
+                </div>
+              </div>
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <a href="mailto:support@utm.my?subject=Skill%20Map%20Password%20Reset" class="small text-decoration-none">Forgot password?</a>
+                <a href="#registerPane" class="small text-decoration-none" data-bs-toggle="pill">Create an account</a>
+              </div>
+              <button type="submit" name="login_submit" class="btn btn-primary btn-lg w-100">Login to Skill Map</button>
+              <div class="skillmap-demo-box">
+                <div class="fw-semibold mb-1">Demo Accounts</div>
+                <div>admin@gmail.com / admin@123</div>
+                <div>lecturer@gmail.com / lecturer@123</div>
+                <div>student@gmail.com / student@123</div>
+              </div>
+            </form>
+          </div>
+
+          <div class="tab-pane fade <?= $activeTab === 'register' ? 'show active' : '' ?>" id="registerPane">
+            <form method="post" class="skillmap-register-form">
+              <input type="hidden" name="tab" value="register">
+              <div class="skillmap-form-grid">
+                <div>
+                  <label class="form-label">Full Name</label>
+                  <input type="text" name="name" class="form-control" placeholder="Chong Pei" required>
+                </div>
+                <div>
+                  <label class="form-label">Email Address</label>
+                  <input type="email" name="email" class="form-control" placeholder="student@utm.my" required>
+                </div>
+                <div>
+                  <label class="form-label">Username</label>
+                  <input type="text" name="username" class="form-control" placeholder="demostudent">
+                </div>
+                <div>
+                  <label class="form-label">Gender</label>
+                  <select name="gender" class="form-select" data-profile-gender>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="skillmap-icon-compact">
+                <img class="profile-icon-preview" src="/fyp_skillmapsystem/<?= htmlspecialchars(skillmap_default_profile_icon('male', 'student'), ENT_QUOTES, 'UTF-8') ?>" alt="">
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">Profile Icon</div>
+                  <div class="small text-muted">Shown in your navbar and profile.</div>
+                </div>
+                <button class="btn btn-sm btn-outline-primary" type="button" data-toggle-panel="registerIconPanel">
+                  <i class="bi bi-images me-1"></i>Change
+                </button>
+              </div>
+              <div id="registerIconPanel" class="d-none">
+                <?php foreach (skillmap_profile_icon_options() as $group => $icons): ?>
+                  <div class="small fw-semibold text-muted text-capitalize mt-3 mb-2"><?= htmlspecialchars($group, ENT_QUOTES, 'UTF-8') ?></div>
+                  <div class="profile-icon-grid">
+                    <?php foreach ($icons as $icon): ?>
+                      <label class="profile-icon-choice">
+                        <input type="radio" name="profile_icon" value="<?= htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') ?>" <?= $icon === skillmap_default_profile_icon('male', 'student') ? 'checked' : '' ?>>
+                        <img src="/fyp_skillmapsystem/<?= htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                      </label>
+                    <?php endforeach; ?>
                   </div>
-                  <div class="skillmap-laptop-base"></div>
+                <?php endforeach; ?>
+              </div>
+
+              <div class="skillmap-form-grid">
+                <div>
+                  <label class="form-label">Programme</label>
+                  <select name="programme" class="form-select" data-other-select="programmeOtherWrap" required>
+                    <?php foreach ($registrationOptions['programmes'] as $programme): ?>
+                      <option value="<?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                    <option value="__other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">Year</label>
+                  <select name="year" class="form-select" required>
+                    <?php foreach ($registrationOptions['years'] as $year): ?>
+                      <option value="<?= htmlspecialchars($year, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($year, ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
               </div>
-            </div>
-          </div>
-          <div class="mt-4 small text-muted">FYP4999 · FDSIT · Universiti Teknologi Malaysia</div>
-        </div>
-      </div>
-      <div class="col-lg-5 bg-white d-flex align-items-center justify-content-center p-4 p-md-5">
-        <div class="w-100" style="max-width: 460px;">
-          <div class="card rounded-5 shadow-lg border-0">
-            <div class="card-body p-4 p-md-5">
-              <ul class="nav nav-pills nav-fill mb-4" id="authTabs" role="tablist">
-                <li class="nav-item" role="presentation"><button class="nav-link <?= $activeTab === 'login' ? 'active' : '' ?>" data-bs-toggle="pill" data-bs-target="#loginPane" type="button">Login</button></li>
-                <li class="nav-item" role="presentation"><button class="nav-link <?= $activeTab === 'register' ? 'active' : '' ?>" data-bs-toggle="pill" data-bs-target="#registerPane" type="button">Create Account</button></li>
-              </ul>
-              <?php if ($error !== ''): ?>
-                <div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
-              <?php endif; ?>
-              <div class="tab-content">
-                <div class="tab-pane fade <?= $activeTab === 'login' ? 'show active' : '' ?>" id="loginPane">
-                  <form method="post" class="d-grid gap-3">
-                    <input type="hidden" name="tab" value="login">
-                    <div>
-                      <label class="form-label">Email Address or Username</label>
-                      <input type="text" name="email" class="form-control form-control-lg" placeholder="student@utm.my or demostudent" required>
-                    </div>
-                    <div>
-                      <label class="form-label">Password</label>
-                      <div class="input-group input-group-lg">
-                        <input type="password" name="password" id="loginPassword" class="form-control" required>
-                        <button class="btn btn-outline-secondary" type="button" data-toggle-password="loginPassword"><i class="bi bi-eye-slash"></i></button>
-                      </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                      <a href="mailto:support@utm.my?subject=Skill%20Map%20Password%20Reset" class="small text-decoration-none">Forgot password?</a>
-                      <a href="#registerPane" class="small text-decoration-none" data-bs-toggle="pill">Register</a>
-                    </div>
-                    <button type="submit" name="login_submit" class="btn btn-primary btn-lg w-100">Login to Skill Map</button>
-                    <div class="alert alert-info mb-0">Demo accounts: admin@gmail.com / admin@123, lecturer@gmail.com / lecturer@123, staff@gmail.com / lecturer@123</div>
-                  </form>
+              <div id="programmeOtherWrap" class="d-none">
+                <label class="form-label">Programme Name</label>
+                <input type="text" name="programme_other" class="form-control" placeholder="Write your programme name">
+                <div class="form-text">New programmes require admin approval before the account can be used.</div>
+              </div>
+
+              <div class="skillmap-form-grid">
+                <div>
+                  <label class="form-label">Role</label>
+                  <select name="role" class="form-select" data-other-select="roleOtherWrap" required>
+                    <?php foreach ($registrationOptions['roles'] as $role): ?>
+                      <option value="<?= htmlspecialchars($role, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(ucfirst($role), ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                    <option value="__other">Other</option>
+                  </select>
                 </div>
-                <div class="tab-pane fade <?= $activeTab === 'register' ? 'show active' : '' ?>" id="registerPane">
-                  <form method="post" class="d-grid gap-3">
-                    <input type="hidden" name="tab" value="register">
-                    <div>
-                      <label class="form-label">Full Name</label>
-                      <input type="text" name="name" class="form-control form-control-lg" placeholder="Chong Pei" required>
-                    </div>
-                    <div>
-                      <label class="form-label">Email Address</label>
-                      <input type="email" name="email" class="form-control form-control-lg" placeholder="student@utm.my" required>
-                    </div>
-                    <div>
-                      <label class="form-label">Username</label>
-                      <input type="text" name="username" class="form-control" placeholder="demostudent">
-                    </div>
-                    <div class="row g-3">
-                      <div class="col-md-6">
-                        <label class="form-label">Programme</label>
-                        <input type="text" name="programme" class="form-control" value="Information Systems" required>
-                      </div>
-                      <div class="col-md-6">
-                        <label class="form-label">Year</label>
-                        <input type="text" name="year" class="form-control" value="Year 4" required>
-                      </div>
-                    </div>
-                    <div>
-                      <label class="form-label">Role</label>
-                      <select name="role" class="form-select">
-                        <option value="student">Student</option>
-                        <option value="lecturer">Lecturer</option>
-                        <option value="staff">Staff</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="form-label">Password</label>
-                      <div class="input-group input-group-lg">
-                        <input type="password" name="password" id="registerPassword" class="form-control" required>
-                        <button class="btn btn-outline-secondary" type="button" data-toggle-password="registerPassword"><i class="bi bi-eye-slash"></i></button>
-                      </div>
-                    </div>
-                    <button type="submit" name="register_submit" class="btn btn-primary btn-lg w-100">Create Account</button>
-                  </form>
+                <div>
+                  <label class="form-label">Password</label>
+                  <div class="input-group">
+                    <input type="password" name="password" id="registerPassword" class="form-control" required>
+                    <button class="btn btn-outline-secondary" type="button" data-toggle-password="registerPassword"><i class="bi bi-eye-slash"></i></button>
+                  </div>
                 </div>
               </div>
-            </div>
+              <div id="roleOtherWrap" class="d-none">
+                <label class="form-label">Role Name</label>
+                <input type="text" name="role_other" class="form-control" placeholder="Write your requested role">
+                <div class="form-text">New roles require admin approval before the account can be used.</div>
+              </div>
+
+              <button type="submit" name="register_submit" class="btn btn-primary btn-lg w-100">Create Account</button>
+            </form>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+
+      <div class="skillmap-auth-footer text-center mt-3">Develop by Aggies · &copy; <?= htmlspecialchars($currentYear, ENT_QUOTES, 'UTF-8') ?> Skill Map License</div>
+    </section>
+  </main>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>
+  <script>
+    document.querySelectorAll('[data-other-select]').forEach((select) => {
+      const target = document.getElementById(select.getAttribute('data-other-select'));
+      const sync = () => {
+        if (!target) return;
+        const isOther = select.value === '__other';
+        target.classList.toggle('d-none', !isOther);
+        target.querySelectorAll('input').forEach((input) => {
+          input.required = isOther;
+        });
+      };
+      select.addEventListener('change', sync);
+      sync();
+    });
+  </script>
 </body>
 </html>

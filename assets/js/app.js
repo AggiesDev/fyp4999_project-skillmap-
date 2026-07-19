@@ -115,4 +115,45 @@ document.addEventListener('DOMContentLoaded', () => {
       button.classList.add('active');
     });
   });
+
+  const profilePreview = document.querySelector('.profile-icon-preview');
+  const iconRadios = document.querySelectorAll('input[name="profile_icon"]');
+  const genderSelects = document.querySelectorAll('[data-profile-gender]');
+  const genderDefaults = {
+    male: 'profileicons/icons8-add-user-male-100.png',
+    female: 'profileicons/icons8-add-user-female-skin-type-7-100.png',
+  };
+
+  iconRadios.forEach((radio) => {
+    radio.addEventListener('change', () => {
+      if (profilePreview && radio.checked) {
+        profilePreview.src = `/fyp_skillmapsystem/${radio.value}`;
+      }
+    });
+  });
+
+  genderSelects.forEach((select) => {
+    select.addEventListener('change', () => {
+      const targetValue = genderDefaults[select.value] || genderDefaults.male;
+      const targetRadio = document.querySelector(`input[name="profile_icon"][value="${targetValue}"]`);
+      if (targetRadio) {
+        targetRadio.checked = true;
+        targetRadio.dispatchEvent(new Event('change'));
+      }
+    });
+  });
+
+  const adminSidebarToggle = document.querySelector('[data-admin-sidebar-toggle]');
+  if (adminSidebarToggle) {
+    const storageKey = 'skillmap-admin-sidebar-collapsed';
+    const applySidebarState = (collapsed) => {
+      document.body.classList.toggle('admin-sidebar-collapsed', collapsed);
+      localStorage.setItem(storageKey, collapsed ? '1' : '0');
+    };
+
+    applySidebarState(localStorage.getItem(storageKey) === '1');
+    adminSidebarToggle.addEventListener('click', () => {
+      applySidebarState(!document.body.classList.contains('admin-sidebar-collapsed'));
+    });
+  }
 });

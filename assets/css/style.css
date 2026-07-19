@@ -15,6 +15,13 @@
 body {
   background: linear-gradient(180deg, #f8fbff 0%, #f8fafc 100%);
   color: var(--sm-text);
+  overflow-x: hidden;
+}
+
+body:has(.skillmap-admin-sidebar) {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, .12), transparent 32rem),
+    linear-gradient(180deg, #f8fbff 0%, #f8fafc 100%);
 }
 
 .bg-soft-blue { background: #dbeafe; }
@@ -24,14 +31,359 @@ body {
 
 .text-muted-strong { color: var(--sm-muted); }
 
-.skillmap-auth-shell {
+.skillmap-auth-page {
   min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(37, 99, 235, .18), transparent 22rem),
+    radial-gradient(circle at 88% 78%, rgba(15, 118, 110, .18), transparent 24rem),
+    linear-gradient(135deg, #f8fbff 0%, #eef6ff 48%, #f8fafc 100%);
 }
 
-.skillmap-auth-left {
-  background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 55%, #f8fbff 100%);
+.skillmap-auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(380px, .75fr);
+  gap: clamp(1.25rem, 4vw, 4rem);
+  align-items: center;
+  width: min(100%, 1440px);
+  margin-inline: auto;
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.skillmap-auth-brand-panel {
+  min-height: min(760px, calc(100vh - 5rem));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   position: relative;
-  overflow: hidden;
+  overflow: clip;
+  border-radius: 1.5rem;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  background: rgba(255,255,255,.56);
+  border: 1px solid rgba(226,232,240,.8);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .09);
+  backdrop-filter: blur(18px);
+}
+
+.skillmap-auth-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.skillmap-auth-institution {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: .45rem .75rem;
+  background: #fff;
+  border: 1px solid var(--sm-border);
+  color: var(--sm-muted);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.skillmap-login-logo {
+  width: min(260px, 62vw);
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.skillmap-auth-hero {
+  width: min(100%, 760px);
+  padding-block: clamp(1.25rem, 4vw, 3rem);
+}
+
+.skillmap-auth-kicker {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: .35rem .7rem;
+  background: #dbeafe;
+  color: var(--sm-primary-dark);
+  font-size: .78rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.skillmap-auth-hero h1 {
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  line-height: .98;
+  font-weight: 850;
+  max-width: 12ch;
+  margin-bottom: 1rem;
+}
+
+.skillmap-auth-hero p {
+  color: var(--sm-muted);
+  font-size: clamp(1rem, 1.7vw, 1.18rem);
+  max-width: 58ch;
+  margin: 0;
+}
+
+.skillmap-auth-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: stretch;
+  width: min(100%, 820px);
+}
+
+.skillmap-showcase-main {
+  border-radius: 1.25rem;
+  background: rgba(255,255,255,.86);
+  border: 1px solid rgba(226,232,240,.9);
+  padding: clamp(1rem, 2vw, 1.35rem);
+  box-shadow: 0 18px 44px rgba(15,23,42,.08);
+}
+
+.skillmap-showcase-strip {
+  display: grid;
+  gap: .75rem;
+}
+
+.skillmap-showcase-strip div {
+  min-width: 94px;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid rgba(226,232,240,.9);
+  box-shadow: 0 12px 28px rgba(15,23,42,.06);
+  display: grid;
+  place-items: center;
+  gap: .25rem;
+  padding: .8rem;
+  color: var(--sm-primary);
+  font-weight: 800;
+}
+
+.skillmap-showcase-strip i {
+  font-size: 1.35rem;
+}
+
+.skillmap-auth-form-panel {
+  width: min(100%, 520px);
+  justify-self: center;
+}
+
+.skillmap-auth-card {
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(226,232,240,.9);
+  border-radius: 1.25rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .14) !important;
+  backdrop-filter: blur(18px);
+}
+
+.skillmap-auth-card-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(37,99,235,.12);
+}
+
+.skillmap-auth-footer {
+  color: var(--sm-muted);
+  font-size: .78rem;
+}
+
+.skillmap-auth-tabs {
+  background: #f1f5f9;
+  border: 1px solid var(--sm-border);
+  border-radius: .9rem;
+  padding: .3rem;
+}
+
+.skillmap-auth-card .skillmap-auth-tabs .nav-link {
+  color: var(--sm-muted);
+  border-radius: .7rem;
+  font-weight: 800;
+}
+
+.skillmap-auth-card .skillmap-auth-tabs .nav-link.active {
+  background: #fff;
+  color: var(--sm-primary);
+  box-shadow: 0 8px 18px rgba(15,23,42,.08);
+}
+
+.skillmap-demo-box {
+  border-radius: .9rem;
+  padding: .85rem 1rem;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+  font-size: .86rem;
+}
+
+.skillmap-register-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.skillmap-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.skillmap-icon-compact {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  border: 1px solid var(--sm-border);
+  border-radius: .95rem;
+  padding: .75rem;
+  background: #f8fafc;
+}
+
+@media (max-width: 1199.98px) {
+  .skillmap-auth-shell {
+    grid-template-columns: minmax(0, .95fr) minmax(360px, .85fr);
+    gap: 1.5rem;
+  }
+
+  .skillmap-auth-hero h1 {
+    max-width: 14ch;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .skillmap-auth-shell {
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding: 1rem;
+  }
+
+  .skillmap-auth-brand-panel {
+    min-height: auto;
+    padding: 1.25rem;
+  }
+
+  .skillmap-auth-hero {
+    padding-block: 1.5rem;
+  }
+
+  .skillmap-auth-hero h1 {
+    max-width: 18ch;
+  }
+
+  .skillmap-auth-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  .skillmap-showcase-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .skillmap-showcase-strip div {
+    min-width: 0;
+  }
+
+  .skillmap-auth-form-panel {
+    width: min(100%, 720px);
+  }
+}
+
+@media (max-width: 575.98px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .skillmap-auth-shell {
+    width: 100%;
+    max-width: 100vw;
+    padding: .75rem;
+    gap: .85rem;
+  }
+
+  .skillmap-auth-brand-panel {
+    width: 100%;
+    max-width: calc(100vw - 1.5rem);
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+
+  .skillmap-auth-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .6rem;
+  }
+
+  .skillmap-login-logo {
+    width: min(190px, 74vw);
+    max-width: 100%;
+  }
+
+  .skillmap-auth-institution {
+    font-size: .74rem;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .skillmap-auth-hero h1 {
+    font-size: clamp(1.85rem, 10vw, 2.75rem);
+    max-width: 11ch;
+    overflow-wrap: break-word;
+  }
+
+  .skillmap-auth-hero p {
+    font-size: .95rem;
+    max-width: 32ch;
+  }
+
+  .skillmap-auth-showcase {
+    display: none;
+  }
+
+  .skillmap-auth-form-panel {
+    width: 100%;
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  .skillmap-auth-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 1rem;
+    border-radius: 1rem;
+  }
+
+  .skillmap-auth-card-logo {
+    width: 60px;
+    height: 60px;
+  }
+
+  .skillmap-form-grid {
+    grid-template-columns: 1fr;
+    gap: .85rem;
+  }
+
+  .skillmap-icon-compact {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .skillmap-icon-compact .btn {
+    width: 100%;
+  }
+
+  .skillmap-auth-tabs .nav-link {
+    padding-inline: .5rem;
+    font-size: .86rem;
+    white-space: normal;
+  }
+
+  .skillmap-auth-footer {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    line-height: 1.45;
+    font-size: .72rem;
+  }
 }
 
 .skillmap-floating-card {
@@ -99,15 +451,50 @@ body {
 
 .card {
   border: 1px solid var(--sm-border);
-  border-radius: 1rem;
+  border-radius: .9rem;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 .rounded-xl { border-radius: 1rem !important; }
 .rounded-2xl { border-radius: 1.5rem !important; }
 
-.navbar-sm-primary { background: var(--sm-primary); }
-.navbar-sm-navy { background: var(--sm-navy); }
+.navbar-sm-primary {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 62%, #0f766e 100%);
+}
+
+.navbar-sm-navy {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 58%, #1d4ed8 100%);
+}
+
+.skillmap-navbar-brand {
+  min-width: fit-content;
+}
+
+.skillmap-nav-logo {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(255,255,255,.95);
+  padding: 3px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .18);
+}
+
+.skillmap-role-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  border-radius: 999px;
+  padding: .25rem .65rem;
+  background: rgba(255,255,255,.16);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.22);
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
 
 .nav-pills .nav-link.active,
 .nav-pills .show > .nav-link {
@@ -115,12 +502,193 @@ body {
   color: #fff;
 }
 
-.navbar .nav-link { color: rgba(255,255,255,0.88); }
-.navbar .nav-link:hover { color: #fff; }
-
-.admin-nav .nav-link.active {
-  background: rgba(255,255,255,0.12);
+.navbar .nav-link {
+  color: rgba(255,255,255,0.88);
   border-radius: 999px;
+}
+.navbar .nav-link:hover {
+  color: #fff;
+  background: rgba(255,255,255,.1);
+}
+
+.skillmap-admin-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 280px;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 58%, #1d4ed8 100%);
+  color: #fff;
+  box-shadow: 18px 0 42px rgba(15, 23, 42, .18);
+}
+
+.skillmap-admin-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,.13);
+}
+
+.skillmap-admin-toggle {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: .75rem;
+}
+
+.skillmap-admin-menu {
+  display: grid;
+  gap: .45rem;
+  padding: 1rem 0;
+  overflow-y: auto;
+}
+
+.skillmap-admin-menu-link {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-height: 2.8rem;
+  padding: .65rem .8rem;
+  color: rgba(255,255,255,.82);
+  border-radius: .8rem;
+  text-decoration: none;
+  font-weight: 650;
+  transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+
+.skillmap-admin-menu-link i {
+  width: 1.35rem;
+  min-width: 1.35rem;
+  text-align: center;
+  font-size: 1.05rem;
+}
+
+.skillmap-admin-menu-link:hover,
+.skillmap-admin-menu-link.active {
+  color: #fff;
+  background: rgba(255,255,255,.14);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+}
+
+.skillmap-admin-menu-link:hover {
+  transform: translateX(2px);
+}
+
+.skillmap-admin-sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,.13);
+}
+
+.skillmap-admin-user,
+.skillmap-admin-brand-text,
+.skillmap-admin-menu-link span,
+.skillmap-license {
+  transition: opacity .15s ease;
+}
+
+.skillmap-license {
+  color: rgba(255,255,255,.64);
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+body:has(.skillmap-admin-sidebar) main {
+  max-width: 1440px;
+  margin-left: 280px;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+body.admin-sidebar-collapsed .skillmap-admin-sidebar {
+  width: 86px;
+}
+
+body.admin-sidebar-collapsed main {
+  margin-left: 86px;
+}
+
+body.admin-sidebar-collapsed .skillmap-admin-brand {
+  flex-direction: column;
+}
+
+body.admin-sidebar-collapsed .skillmap-admin-brand-text,
+body.admin-sidebar-collapsed .skillmap-admin-menu-link span,
+body.admin-sidebar-collapsed .skillmap-admin-user,
+body.admin-sidebar-collapsed .skillmap-license {
+  display: none;
+}
+
+body.admin-sidebar-collapsed .skillmap-admin-menu-link {
+  justify-content: center;
+  padding-inline: .65rem;
+}
+
+body.admin-sidebar-collapsed .skillmap-admin-menu-link:hover {
+  transform: none;
+}
+
+body:has(.skillmap-admin-sidebar) main > .d-flex:first-child {
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(226,232,240,.9);
+  border-radius: 1rem;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .05);
+  backdrop-filter: blur(10px);
+}
+
+body:has(.skillmap-admin-sidebar) main .card {
+  border-radius: .85rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+}
+
+body:has(.skillmap-admin-sidebar) main .card:hover {
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+}
+
+body:has(.skillmap-admin-sidebar) .table > :not(caption) > * > * {
+  padding: .9rem .95rem;
+}
+
+body:has(.skillmap-admin-sidebar) .table tbody tr:hover {
+  background: #f8fafc;
+}
+
+body:has(.skillmap-admin-sidebar) .btn {
+  border-radius: .65rem;
+}
+
+@media (max-width: 991.98px) {
+  .skillmap-admin-sidebar {
+    width: 86px;
+  }
+
+  body:has(.skillmap-admin-sidebar) main {
+    margin-left: 86px;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .skillmap-admin-brand {
+    flex-direction: column;
+  }
+
+  .skillmap-admin-brand-text,
+  .skillmap-admin-menu-link span,
+  .skillmap-admin-user,
+  .skillmap-license {
+    display: none;
+  }
+
+  .skillmap-admin-menu-link {
+    justify-content: center;
+    padding-inline: .65rem;
+  }
 }
 
 .skillmap-ring {
@@ -227,6 +795,70 @@ body {
   top: 1.25rem;
 }
 
+.skillmap-student-review-list {
+  display: grid;
+  gap: .65rem;
+  max-height: calc(100vh - 14rem);
+  overflow-y: auto;
+  padding-right: .2rem;
+}
+
+.skillmap-review-student {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem;
+  border: 1px solid var(--sm-border);
+  border-radius: .85rem;
+  background: #fff;
+  color: var(--sm-text);
+  text-decoration: none;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.skillmap-review-student:hover {
+  color: var(--sm-text);
+  border-color: rgba(37,99,235,.35);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
+  transform: translateY(-1px);
+}
+
+.skillmap-review-student.active {
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #0f766e);
+  border-color: transparent;
+}
+
+.skillmap-review-student.active .small {
+  color: rgba(255,255,255,.75);
+}
+
+.skillmap-review-skill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--sm-border);
+  border-radius: .8rem;
+  background: #fff;
+}
+
+.skillmap-review-rating {
+  min-width: 170px;
+}
+
+@media (max-width: 767.98px) {
+  .skillmap-review-skill {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .skillmap-review-rating {
+    min-width: 0;
+  }
+}
+
 .star-btn i {
   font-size: 1.1rem;
 }
@@ -240,6 +872,94 @@ body {
   background: rgba(255,255,255,0.2);
   color: #fff;
   font-weight: 700;
+}
+
+.navbar .avatar-circle {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  max-height: 36px;
+  flex: 0 0 36px;
+  font-size: .82rem;
+}
+
+.navbar-profile-icon,
+.profile-icon-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  object-fit: cover;
+  background: #eff6ff;
+  border: 1px solid rgba(255,255,255,0.45);
+}
+
+.navbar-profile-icon {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+  max-width: 36px;
+  max-height: 36px;
+  min-height: 36px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: rgba(255,255,255,0.2);
+  flex: 0 0 36px;
+  padding: 2px;
+  display: inline-block;
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+.table-profile-icon {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px;
+  max-width: 38px;
+  max-height: 38px;
+  border-radius: 50%;
+  object-fit: contain;
+  flex: 0 0 38px;
+  padding: 2px;
+}
+
+.profile-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  gap: .65rem;
+}
+
+.profile-icon-choice {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--sm-border);
+  border-radius: .9rem;
+  padding: .4rem;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.profile-icon-choice:hover {
+  border-color: var(--sm-primary);
+  transform: translateY(-1px);
+}
+
+.profile-icon-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profile-icon-choice img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.profile-icon-choice:has(input:checked) {
+  border-color: var(--sm-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
 }
 
 .table-responsive {
@@ -259,6 +979,31 @@ body {
   border-left: 4px solid transparent;
 }
 
+.report-sheet {
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .navbar,
+  .no-print {
+    display: none !important;
+  }
+
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .report-sheet {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
 .analysis-card-border.purple {
   border-left-color: var(--sm-purple);
 }
@@ -268,10 +1013,6 @@ body {
 }
 
 @media (max-width: 991px) {
-  .skillmap-auth-left {
-    min-height: 42vh;
-  }
-
   .skillmap-right-rail {
     position: static;
   }

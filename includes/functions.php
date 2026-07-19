@@ -1,5 +1,5 @@
 <?php
-// Shared helper functions for Skill Map backed by MySQL via mysqli.
+// Shared helper functions for Skill Map.
 
 declare(strict_types=1);
 
@@ -8,6 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../config/dbconnect.php';
+require_once __DIR__ . '/auth.php';
 
 function skillmap_has_username_column(): bool
 {
@@ -26,6 +27,25 @@ function skillmap_has_username_column(): bool
     }
 
     return $cached;
+}
+
+function skillmap_user_column_exists(string $column): bool
+{
+    global $conn;
+
+    $column = preg_replace('/[^A-Za-z0-9_]/', '', $column);
+    if ($column === '') {
+        return false;
+    }
+
+    $result = mysqli_query($conn, "SHOW COLUMNS FROM users LIKE '" . mysqli_real_escape_string($conn, $column) . "'");
+    $exists = $result instanceof mysqli_result && mysqli_num_rows($result) > 0;
+
+    if ($result instanceof mysqli_result) {
+        mysqli_free_result($result);
+    }
+
+    return $exists;
 }
 
 function skillmap_bootstrap_database(): void
@@ -96,7 +116,29 @@ function skillmap_bootstrap_database(): void
         CONSTRAINT fk_user_credentials_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )');
 
-    @mysqli_query($conn, 'ALTER TABLE users MODIFY COLUMN role ENUM("admin","student","lecturer","staff") NOT NULL DEFAULT "student"');
+    skillmap_db_query('CREATE TABLE IF NOT EXISTS account_approval_requests (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        request_type ENUM("programme", "role") NOT NULL,
+        requested_value VARCHAR(190) NOT NULL,
+        status ENUM("Pending", "Approved", "Rejected") NOT NULL DEFAULT "Pending",
+        reviewed_by INT NULL,
+        reviewed_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_account_approval_requests_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        CONSTRAINT fk_account_approval_requests_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+    )');
+
+    @mysqli_query($conn, 'ALTER TABLE users MODIFY COLUMN role VARCHAR(80) NOT NULL DEFAULT "student"');
+    if (!skillmap_user_column_exists('gender')) {
+        mysqli_query($conn, 'ALTER TABLE users ADD COLUMN gender ENUM("male", "female") NOT NULL DEFAULT "male" AFTER avatar_initials');
+    }
+    if (!skillmap_user_column_exists('profile_icon')) {
+        mysqli_query($conn, 'ALTER TABLE users ADD COLUMN profile_icon VARCHAR(190) NOT NULL DEFAULT "profileicons/icons8-add-user-male-100.png" AFTER gender');
+    }
+    @mysqli_query($conn, 'UPDATE users SET gender = "male" WHERE gender IS NULL OR gender = ""');
+    @mysqli_query($conn, 'UPDATE users SET profile_icon = CASE WHEN role IN ("admin", "staff", "lecturer") THEN "profileicons/icons8-administrator-male-100.png" ELSE "profileicons/icons8-add-user-male-100.png" END WHERE profile_icon IS NULL OR profile_icon = ""');
+    @mysqli_query($conn, 'UPDATE users SET profile_icon = "profileicons/icons8-administrator-male-100.png" WHERE role IN ("admin", "staff", "lecturer") AND profile_icon = "profileicons/icons8-add-user-male-100.png"');
 
     skillmap_db_query('INSERT IGNORE INTO permissions (name, description) VALUES (?, ?)', 'ss', ['view_admin_dashboard', 'View the main admin dashboard']);
     skillmap_db_query('INSERT IGNORE INTO permissions (name, description) VALUES (?, ?)', 'ss', ['manage_users', 'Create, update, and deactivate user accounts']);
@@ -124,8 +166,6 @@ function skillmap_bootstrap_database(): void
     skillmap_db_query('INSERT IGNORE INTO access_role_permissions (role_id, permission_id, enabled) VALUES ((SELECT id FROM access_roles WHERE name = ? LIMIT 1), (SELECT id FROM permissions WHERE name = ? LIMIT 1), 1)', 'ss', ['lecturer', 'send_notifications']);
     skillmap_db_query('INSERT IGNORE INTO access_role_permissions (role_id, permission_id, enabled) VALUES ((SELECT id FROM access_roles WHERE name = ? LIMIT 1), (SELECT id FROM permissions WHERE name = ? LIMIT 1), 1)', 'ss', ['staff', 'send_notifications']);
 
-    skillmap_db_query('INSERT IGNORE INTO access_role_permissions (role_id, permission_id, enabled) VALUES ((SELECT id FROM access_roles WHERE name = ? LIMIT 1), (SELECT id FROM permissions WHERE name = ? LIMIT 1), 1)', 'ss', ['student', 'view_admin_dashboard']);
-
     $userCountResult = mysqli_query($conn, 'SELECT COUNT(*) AS total FROM users');
     $userCount = 0;
     if ($userCountResult instanceof mysqli_result) {
@@ -142,24 +182,24 @@ function skillmap_bootstrap_database(): void
         ];
 
         skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
-            'ssssssss',
-            ['Admin User', 'admin@gmail.com', 'admin@gmail.com', $passwords['admin'], 'admin', 'FDSIT', 'Staff', 'AU']
+            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
+            'ssssssssss',
+            ['Admin User', 'admin@gmail.com', 'admin@gmail.com', $passwords['admin'], 'admin', 'FDSIT', 'Staff', 'AU', 'male', skillmap_default_profile_icon('male', 'admin')]
         );
         skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
-            'ssssssss',
-            ['Demo Student', 'demostudent', 'student@gmail.com', $passwords['student'], 'student', 'Information Systems', 'Year 4', 'DS']
+            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
+            'ssssssssss',
+            ['Demo Student', 'demostudent', 'student@gmail.com', $passwords['student'], 'student', 'Information Systems', 'Year 4', 'DS', 'male', skillmap_default_profile_icon('male', 'student')]
         );
         skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
-            'ssssssss',
-            ['Demo Lecturer', 'demolecturer', 'lecturer@gmail.com', $passwords['lecturer'], 'lecturer', 'Information Systems', 'Staff', 'DL']
+            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
+            'ssssssssss',
+            ['Demo Lecturer', 'demolecturer', 'lecturer@gmail.com', $passwords['lecturer'], 'lecturer', 'Information Systems', 'Staff', 'DL', 'male', skillmap_default_profile_icon('male', 'lecturer')]
         );
         skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
-            'ssssssss',
-            ['Demo Staff', 'demostaff', 'staff@gmail.com', $passwords['lecturer'], 'staff', 'Information Systems', 'Staff', 'ST']
+            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
+            'ssssssssss',
+            ['Demo Staff', 'demostaff', 'staff@gmail.com', $passwords['lecturer'], 'staff', 'Information Systems', 'Staff', 'ST', 'male', skillmap_default_profile_icon('male', 'staff')]
         );
 
         skillmap_db_query('INSERT INTO notifications (sender_role, recipient_role, notification_type, title, body) VALUES (?, ?, ?, ?, ?)', 'sssss', ['admin', 'student', 'info', 'Welcome to Skill Map', 'Start by updating your profile and completing your first analysis.']);
@@ -269,7 +309,7 @@ function skillmap_fetch_all(string $sql, string $types = '', array $params = [])
 
 function skillmap_current_user(): ?array
 {
-    return $_SESSION['user'] ?? null;
+    return current_user();
 }
 
 function skillmap_is_logged_in(): bool
@@ -279,54 +319,24 @@ function skillmap_is_logged_in(): bool
 
 function skillmap_require_auth(array $roles = []): void
 {
-    if (!skillmap_is_logged_in()) {
-        header('Location: /fyp_skillmapsystem/login.php');
-        exit;
+    if ($roles === []) {
+        require_login();
+        return;
     }
 
-    if ($roles !== []) {
-        $user = skillmap_current_user();
-        if (!$user || !in_array($user['role'] ?? '', $roles, true)) {
-            header('Location: /fyp_skillmapsystem/login.php');
-            exit;
-        }
-    }
+    require_role($roles);
 }
 
 function skillmap_current_profile(string $email): ?array
 {
-    $columns = skillmap_has_username_column() ? 'id, name, email, username, role, programme, year_level, avatar_initials, status' : 'id, name, email, role, programme, year_level, avatar_initials, status';
+    $columns = skillmap_has_username_column() ? 'id, name, email, username, role, programme, year_level, avatar_initials, gender, profile_icon, status' : 'id, name, email, role, programme, year_level, avatar_initials, gender, profile_icon, status';
     $user = skillmap_fetch_one('SELECT ' . $columns . ' FROM users WHERE email = ? LIMIT 1', 's', [$email]);
     return $user ?: null;
 }
 
 function skillmap_login(string $loginKey, string $password): ?array
 {
-    if (skillmap_has_username_column()) {
-        $user = skillmap_fetch_one('SELECT id, name, email, username, role, programme, year_level, avatar_initials, status, password_hash FROM users WHERE email = ? OR username = ? LIMIT 1', 'ss', [$loginKey, $loginKey]);
-    } else {
-        $user = skillmap_fetch_one('SELECT id, name, email, role, programme, year_level, avatar_initials, status, password_hash FROM users WHERE email = ? LIMIT 1', 's', [$loginKey]);
-    }
-    if (!$user) {
-        return null;
-    }
-
-    $hash = (string) ($user['password_hash'] ?? '');
-    if (!password_verify($password, $hash)) {
-        return null;
-    }
-
-    return [
-        'id' => (int) $user['id'],
-        'name' => (string) $user['name'],
-        'email' => (string) $user['email'],
-        'username' => (string) ($user['username'] ?? $user['email']),
-        'role' => (string) $user['role'],
-        'programme' => (string) $user['programme'],
-        'year' => (string) $user['year_level'],
-        'initials' => (string) $user['avatar_initials'],
-        'status' => (string) $user['status'],
-    ];
+    return login($loginKey, $password);
 }
 
 function skillmap_register(array $payload): ?array
@@ -334,51 +344,66 @@ function skillmap_register(array $payload): ?array
     $name = trim((string) ($payload['name'] ?? ''));
     $email = trim((string) ($payload['email'] ?? ''));
     $password = (string) ($payload['password'] ?? '');
-    $role = (string) ($payload['role'] ?? 'student');
-    $programme = trim((string) ($payload['programme'] ?? 'Information Systems'));
-    $year = trim((string) ($payload['year'] ?? 'Year 1'));
+    $programmeChoice = trim((string) ($payload['programme'] ?? ''));
+    $programmeOther = trim((string) ($payload['programme_other'] ?? ''));
+    $year = trim((string) ($payload['year'] ?? ''));
+    $roleChoice = trim((string) ($payload['role'] ?? 'student'));
+    $roleOther = trim((string) ($payload['role_other'] ?? ''));
     $username = trim((string) ($payload['username'] ?? ''));
+    $gender = skillmap_normalize_gender((string) ($payload['gender'] ?? 'male'));
+    $profileIcon = skillmap_sanitize_profile_icon((string) ($payload['profile_icon'] ?? ''), $gender, $roleChoice);
 
-    if ($name === '' || $email === '' || $password === '') {
-        return null;
+    $programme = $programmeChoice === '__other' ? $programmeOther : $programmeChoice;
+    $requestedRole = $roleChoice === '__other' ? $roleOther : $roleChoice;
+    $systemRole = in_array($roleChoice, ['student', 'lecturer'], true) ? $roleChoice : 'student';
+    $needsApproval = $programmeChoice === '__other' || $roleChoice === '__other';
+
+    if ($programme === '') {
+        $programme = 'Information Systems';
+    }
+    if ($year === '') {
+        $year = 'Year 1';
     }
 
-    $initials = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name) ?: 'SM', 0, 2));
-    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+    return register($name, $username, $email, $password, $programme, $year, $systemRole, $needsApproval ? 'Inactive' : 'Active', [
+        'programme' => $programmeChoice === '__other' ? $programme : '',
+        'role' => $roleChoice === '__other' ? $requestedRole : '',
+    ], $gender, $profileIcon);
+}
 
-    if (skillmap_has_username_column()) {
-        $insert = skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Active")',
-            'ssssssss',
-            [$name, $username !== '' ? $username : $email, $email, $passwordHash, $role, $programme, $year, $initials]
-        );
-    } else {
-        $insert = skillmap_db_query(
-            'INSERT INTO users (name, email, password_hash, role, programme, year_level, avatar_initials, status) VALUES (?, ?, ?, ?, ?, ?, ?, "Active")',
-            'sssssss',
-            [$name, $email, $passwordHash, $role, $programme, $year, $initials]
-        );
+function skillmap_registration_options(): array
+{
+    $programmes = array_column(skillmap_fetch_all('SELECT DISTINCT programme AS value FROM users WHERE programme <> "" AND status = "Active" AND role IN ("student", "lecturer") ORDER BY programme'), 'value');
+    $years = array_column(skillmap_fetch_all('SELECT DISTINCT year_level AS value FROM users WHERE year_level LIKE "Year %" AND status = "Active" AND role IN ("student", "lecturer") ORDER BY year_level'), 'value');
+
+    if ($programmes === []) {
+        $programmes = ['Information Systems', 'Software Engineering', 'Computer Science'];
     }
 
-    if ($insert !== true) {
-        return null;
-    }
+    $years = array_values(array_unique(array_merge(['Year 1', 'Year 2', 'Year 3', 'Year 4'], $years)));
 
-    $user = skillmap_current_profile($email);
-    if (!$user) {
-        return null;
+    $roles = array_column(skillmap_fetch_all('SELECT name AS value FROM access_roles WHERE name IN ("student", "lecturer") ORDER BY FIELD(name, "student", "lecturer")'), 'value');
+    if ($roles === []) {
+        $roles = ['student', 'lecturer'];
     }
 
     return [
-        'id' => (int) $user['id'],
-        'name' => (string) $user['name'],
-        'email' => (string) $user['email'],
-        'username' => (string) ($user['username'] ?? $user['email']),
-        'role' => (string) $user['role'],
-        'programme' => (string) $user['programme'],
-        'year' => (string) $user['year_level'],
-        'initials' => (string) $user['avatar_initials'],
+        'programmes' => $programmes,
+        'years' => $years,
+        'roles' => $roles,
     ];
+}
+
+function skillmap_pending_account_requests(): array
+{
+    return skillmap_fetch_all(
+        'SELECT ar.id, ar.user_id, ar.request_type, ar.requested_value, ar.status, ar.created_at,
+                u.name, u.email, u.username, u.role, u.programme, u.year_level, u.status AS user_status
+         FROM account_approval_requests ar
+         INNER JOIN users u ON u.id = ar.user_id
+         WHERE ar.status = "Pending"
+         ORDER BY ar.created_at DESC'
+    );
 }
 
 function skillmap_asset(string $path): string
@@ -430,6 +455,14 @@ function skillmap_status_badge(string $status): string
 
 function skillmap_allowed_notification_targets(string $role): array
 {
+    if (skillmap_user_can('manage_permissions') || skillmap_user_can('manage_users')) {
+        return ['all', 'student', 'lecturer', 'staff'];
+    }
+
+    if (!skillmap_user_can('send_notifications')) {
+        return [];
+    }
+
     switch ($role) {
         case 'admin':
             return ['all', 'student', 'lecturer', 'staff'];
@@ -601,27 +634,7 @@ function skillmap_access_permissions(): array
 
 function skillmap_user_can(string $permissionName): bool
 {
-    $user = skillmap_current_user();
-    if (!$user) {
-        return false;
-    }
-
-    if (($user['role'] ?? '') === 'admin') {
-        return true;
-    }
-
-    $result = skillmap_fetch_one(
-        'SELECT 1 AS allowed
-         FROM access_roles ar
-         INNER JOIN access_role_permissions arp ON arp.role_id = ar.id AND arp.enabled = 1
-         INNER JOIN permissions p ON p.id = arp.permission_id
-         WHERE ar.name = ? AND p.name = ?
-         LIMIT 1',
-        'ss',
-        [(string) ($user['role'] ?? ''), $permissionName]
-    );
-
-    return $result !== null;
+    return has_permission($permissionName);
 }
 
 function skillmap_require_permission(string $permissionName): void
@@ -630,6 +643,35 @@ function skillmap_require_permission(string $permissionName): void
         header('Location: /fyp_skillmapsystem/login.php');
         exit;
     }
+}
+
+function skillmap_default_destination(array $user): string
+{
+    if (($user['role'] ?? '') === 'admin' || skillmap_user_can('view_admin_dashboard')) {
+        return '/fyp_skillmapsystem/admin/analytics.php';
+    }
+
+    if (skillmap_user_can('review_student_skills')) {
+        return '/fyp_skillmapsystem/admin/reviews.php';
+    }
+
+    if (skillmap_user_can('manage_users')) {
+        return '/fyp_skillmapsystem/admin/users.php';
+    }
+
+    if (skillmap_user_can('manage_skills')) {
+        return '/fyp_skillmapsystem/admin/skill_library.php';
+    }
+
+    if (skillmap_user_can('manage_roles')) {
+        return '/fyp_skillmapsystem/admin/benchmarks.php';
+    }
+
+    if (skillmap_user_can('send_notifications')) {
+        return '/fyp_skillmapsystem/admin/notifications.php';
+    }
+
+    return '/fyp_skillmapsystem/users/dashboard.php';
 }
 
 function skillmap_percent_bar(int $value, string $color = 'primary'): string
