@@ -1,0 +1,8 @@
+DirectoryIndex index.php
+Options -Indexes
+
+<FilesMatch "(\.sql|\.bak|\.env|composer\.(json|lock)|package(-lock)?\.json)$">
+  Require all denied
+</FilesMatch>
+
+RedirectMatch 403 ^/(backupdatabase|\.git|\.github|\.vscode|\.continue)(/|$)

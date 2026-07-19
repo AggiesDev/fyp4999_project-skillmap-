@@ -1,0 +1,92 @@
+name: Deploy to InfinityFree
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Upload website by FTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Build InfinityFree database config
+        env:
+          INFINITYFREE_DB_HOST: ${{ secrets.INFINITYFREE_DB_HOST }}
+          INFINITYFREE_DB_NAME: ${{ secrets.INFINITYFREE_DB_NAME }}
+          INFINITYFREE_DB_USER: ${{ secrets.INFINITYFREE_DB_USER }}
+          INFINITYFREE_DB_PASS: ${{ secrets.INFINITYFREE_DB_PASS }}
+        run: |
+          php -r '
+          $host = getenv("INFINITYFREE_DB_HOST");
+          $name = getenv("INFINITYFREE_DB_NAME");
+          $user = getenv("INFINITYFREE_DB_USER");
+          $pass = getenv("INFINITYFREE_DB_PASS");
+
+          foreach (["INFINITYFREE_DB_HOST" => $host, "INFINITYFREE_DB_NAME" => $name, "INFINITYFREE_DB_USER" => $user, "INFINITYFREE_DB_PASS" => $pass] as $key => $value) {
+              if ($value === false || $value === "") {
+                  fwrite(STDERR, "Missing GitHub Secret: {$key}\n");
+                  exit(1);
+              }
+          }
+
+          $config = "<?php\n"
+              . "declare(strict_types=1);\n\n"
+              . "if (session_status() === PHP_SESSION_NONE) {\n"
+              . "    session_start();\n"
+              . "}\n\n"
+              . "defined(\"DB_HOST\") || define(\"DB_HOST\", " . var_export($host, true) . ");\n"
+              . "defined(\"DB_NAME\") || define(\"DB_NAME\", " . var_export($name, true) . ");\n"
+              . "defined(\"DB_USER\") || define(\"DB_USER\", " . var_export($user, true) . ");\n"
+              . "defined(\"DB_PASS\") || define(\"DB_PASS\", " . var_export($pass, true) . ");\n"
+              . "defined(\"DB_CHARSET\") || define(\"DB_CHARSET\", \"utf8mb4\");\n\n"
+              . "\$dsn = \"mysql:host=\" . DB_HOST . \";dbname=\" . DB_NAME . \";charset=\" . DB_CHARSET;\n\n"
+              . "try {\n"
+              . "    \$pdo = new PDO(\$dsn, DB_USER, DB_PASS, [\n"
+              . "        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,\n"
+              . "        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,\n"
+              . "        PDO::ATTR_EMULATE_PREPARES => false,\n"
+              . "    ]);\n"
+              . "} catch (PDOException \$exception) {\n"
+              . "    http_response_code(500);\n"
+              . "    exit(\"Database connection failed.\");\n"
+              . "}\n\n"
+              . "\$conn = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);\n\n"
+              . "if (\$conn instanceof mysqli) {\n"
+              . "    mysqli_set_charset(\$conn, DB_CHARSET);\n"
+              . "}\n";
+
+          file_put_contents("config/dbconnect.php", $config);
+          '
+
+      - name: Deploy files to InfinityFree
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.INFINITYFREE_FTP_SERVER }}
+          username: ${{ secrets.INFINITYFREE_FTP_USERNAME }}
+          password: ${{ secrets.INFINITYFREE_FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: ${{ secrets.INFINITYFREE_FTP_SERVER_DIR }}
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/.vscode/**
+            **/.continue/**
+            **/.DS_Store
+            backupdatabase/**
+            **/*.sql
+            schema.sql
+            DEPLOY_INFINITYFREE.md
