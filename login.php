@@ -54,17 +54,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   <main class="skillmap-auth-shell">
     <section class="skillmap-auth-brand-panel">
       <div class="skillmap-auth-topbar">
-        <img class="skillmap-login-logo" src="/fyp_skillmapsystem/SkillMapLogoPackage/logo-full/logo-transparent-512w.png" alt="Skill Map">
-        <span class="skillmap-auth-institution">Universiti Teknologi Malaysia</span>
+        <img class="skillmap-login-logo" src="/fyp_skillmapsystem/SkillMapLogoPackage/logo-full/logo-transparent-256w.png" alt="Skill Map" style="max-width: 200px;">
+        <!-- <span class="skillmap-auth-institution">Universiti Teknologi Malaysia</span> -->
       </div>
 
       <div class="skillmap-auth-hero">
-        <span class="skillmap-auth-kicker">FYP4999 · FDSIT</span>
+        <span class="skillmap-auth-kicker">FYP4999 · FDSIT . INTI International University</span>
         <h1>Map your skills, close the gaps, and move with a clearer plan.</h1>
         <p>Skill Map helps students compare their current skills with target roles, build a learning roadmap, and share progress with lecturers or administrators.</p>
       </div>
 
-      <div class="skillmap-auth-showcase">
+      <!-- <div class="skillmap-auth-showcase">
         <div class="skillmap-showcase-main">
           <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
             <div>
@@ -93,7 +93,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
           <div><i class="bi bi-bullseye"></i><span>Analyse</span></div>
           <div><i class="bi bi-map"></i><span>Improve</span></div>
         </div>
-      </div>
+      </div> -->
 
       <div class="skillmap-auth-footer">Develop by Aggies · &copy; <?= htmlspecialchars($currentYear, ENT_QUOTES, 'UTF-8') ?> Skill Map License. All rights reserved.</div>
     </section>
@@ -153,15 +153,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
               <div class="skillmap-form-grid">
                 <div>
                   <label class="form-label">Full Name</label>
-                  <input type="text" name="name" class="form-control" placeholder="Chong Pei" required>
+                  <input type="text" name="name" class="form-control" placeholder="Full name" required>
                 </div>
                 <div>
                   <label class="form-label">Email Address</label>
-                  <input type="email" name="email" class="form-control" placeholder="student@utm.my" required>
+                  <input type="email" name="email" class="form-control" placeholder="student@gmail.com" required>
                 </div>
                 <div>
                   <label class="form-label">Username</label>
-                  <input type="text" name="username" class="form-control" placeholder="demostudent">
+                  <input type="text" name="username" class="form-control" placeholder="Username">
                 </div>
                 <div>
                   <label class="form-label">Gender</label>
