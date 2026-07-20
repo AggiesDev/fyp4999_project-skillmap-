@@ -66,12 +66,16 @@ foreach ($roles as $role) {
     <?php if ($roles === []): ?>
       <div class="alert alert-light border">No target roles are available yet.</div>
     <?php else: ?>
+      <div class="skillmap-search mb-4">
+        <i class="bi bi-search"></i>
+        <input class="form-control" type="search" placeholder="Search roles, type, description, or mapped skills" data-search-input data-search-target="#targetRoleSearch">
+      </div>
       <ul class="nav nav-tabs mb-4" role="tablist">
         <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#careerRoles" type="button">Career Roles</button></li>
         <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#leadRoles" type="button">Leadership Roles</button></li>
       </ul>
 
-      <div class="tab-content">
+      <div class="tab-content" id="targetRoleSearch">
         <?php foreach (['Career' => 'careerRoles', 'Lead' => 'leadRoles'] as $type => $paneId): ?>
           <div class="tab-pane fade <?= $type === 'Career' ? 'show active' : '' ?>" id="<?= $paneId ?>">
             <?php if ($rolesByType[$type] === []): ?>
@@ -79,7 +83,7 @@ foreach ($roles as $role) {
             <?php else: ?>
               <div class="row g-3">
                 <?php foreach ($rolesByType[$type] as $role): ?>
-                  <div class="col-md-6 col-xl-4">
+                  <div class="col-md-6 col-xl-4" data-search-item data-search-text="<?= htmlspecialchars($role['name'] . ' ' . $role['type'] . ' ' . $role['description'] . ' ' . $role['mapped_count'] . ' skills mapped', ENT_QUOTES, 'UTF-8') ?>">
                     <form method="post" class="card role-card h-100">
                       <input type="hidden" name="target_role_id" value="<?= (int) $role['id'] ?>">
                       <div class="card-body d-flex flex-column">
@@ -104,6 +108,7 @@ foreach ($roles as $role) {
             <?php endif; ?>
           </div>
         <?php endforeach; ?>
+        <div class="alert alert-light border d-none" data-search-empty>No matching target roles found.</div>
       </div>
     <?php endif; ?>
   </main>

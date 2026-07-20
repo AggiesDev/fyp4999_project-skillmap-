@@ -233,6 +233,174 @@ function skillmap_bootstrap_database(): void
         skillmap_db_query('INSERT IGNORE INTO career_roles (name, type, description) VALUES (?, ?, ?)', 'sss', ['IT Support', 'Career', 'Provide technical support']);
         skillmap_db_query('INSERT IGNORE INTO career_roles (name, type, description) VALUES (?, ?, ?)', 'sss', ['Student Club President', 'Lead', 'Lead student organisations']);
     }
+
+    @mysqli_query($conn, 'UPDATE career_roles SET name = "Computer Scientist", description = COALESCE(NULLIF(description, ""), "Apply computing theory, software design, and data methods") WHERE name = "Computer Scient"');
+
+    $referenceCategories = [
+        ['Technical', 'Skill Category', 'bi-code-square'],
+        ['Leadership', 'Skill Category', 'bi-people-fill'],
+        ['Interpersonal', 'Skill Category', 'bi-chat-dots-fill'],
+        ['Academic', 'Skill Category', 'bi-journal-text'],
+        ['Organisational', 'Skill Category', 'bi-folder-check'],
+        ['Web Developer', 'Target Role', 'bi-code-slash'],
+        ['Data Analyst', 'Target Role', 'bi-bar-chart-line'],
+        ['IT Support', 'Target Role', 'bi-pc-display'],
+        ['Student Club President', 'Target Role', 'bi-megaphone'],
+        ['Computer Scientist', 'Target Role', 'bi-cpu'],
+        ['Software Engineer', 'Target Role', 'bi-window-stack'],
+        ['Cybersecurity Analyst', 'Target Role', 'bi-shield-lock'],
+        ['UI/UX Designer', 'Target Role', 'bi-palette'],
+        ['Database Administrator', 'Target Role', 'bi-database-check'],
+        ['Business Analyst', 'Target Role', 'bi-clipboard-data'],
+        ['Project Manager', 'Target Role', 'bi-kanban'],
+        ['Research Assistant', 'Target Role', 'bi-journal-richtext'],
+        ['Team Leader', 'Target Role', 'bi-person-workspace'],
+    ];
+    foreach ($referenceCategories as $category) {
+        skillmap_db_query('INSERT IGNORE INTO skill_categories (name, type, icon) VALUES (?, ?, ?)', 'sss', $category);
+    }
+
+    $referenceSkills = [
+        ['Technical', 'PHP', 'Server-side scripting for backend logic.', 3, 'Active'],
+        ['Technical', 'MySQL', 'Structured querying and relational database design.', 3, 'Active'],
+        ['Technical', 'JavaScript', 'Interactive client-side application behaviour.', 3, 'Active'],
+        ['Technical', 'Bootstrap 5', 'Responsive layout and UI components.', 2, 'Active'],
+        ['Technical', 'Git', 'Version control and collaboration workflow.', 2, 'Active'],
+        ['Technical', 'API Integration', 'Connect systems through web APIs.', 4, 'Active'],
+        ['Technical', 'Python', 'Automation, scripting, and data-focused programming.', 3, 'Active'],
+        ['Technical', 'Data Visualization', 'Turn raw data into clear charts and decision-ready dashboards.', 3, 'Active'],
+        ['Technical', 'Network Basics', 'Understand IP addressing, connectivity, and common network tools.', 2, 'Active'],
+        ['Technical', 'Troubleshooting', 'Diagnose technical issues with structured investigation steps.', 3, 'Active'],
+        ['Leadership', 'Team Coordination', 'Organise people, tasks, and follow-up across shared goals.', 3, 'Active'],
+        ['Leadership', 'Event Planning', 'Plan student or work events with timelines, budgets, and logistics.', 2, 'Active'],
+        ['Interpersonal', 'Public Speaking', 'Present ideas clearly to classmates, teams, and stakeholders.', 2, 'Active'],
+        ['Interpersonal', 'Customer Support', 'Communicate calmly and resolve user problems professionally.', 2, 'Active'],
+        ['Academic', 'Research Writing', 'Structure evidence, citations, and analysis into clear reports.', 3, 'Active'],
+        ['Academic', 'Statistics', 'Use descriptive statistics and basic inference to interpret data.', 3, 'Active'],
+        ['Organisational', 'Project Planning', 'Break work into milestones, owners, timelines, and risks.', 3, 'Active'],
+        ['Technical', 'Cybersecurity Basics', 'Protect systems with foundational security controls and risk awareness.', 3, 'Active'],
+        ['Technical', 'Cloud Fundamentals', 'Understand hosted infrastructure, services, deployment, and cloud cost basics.', 3, 'Active'],
+        ['Technical', 'Database Administration', 'Maintain relational database performance, backups, access, and reliability.', 4, 'Active'],
+        ['Technical', 'UI/UX Design', 'Design user flows, wireframes, and usable interfaces based on user needs.', 3, 'Active'],
+        ['Interpersonal', 'Requirements Analysis', 'Gather, clarify, and document stakeholder needs for a solution.', 3, 'Active'],
+        ['Organisational', 'Agile Methodology', 'Plan and deliver iterative work with sprints, ceremonies, and feedback.', 3, 'Active'],
+        ['Academic', 'Problem Solving', 'Break complex problems into clear, testable solution steps.', 4, 'Active'],
+    ];
+    foreach ($referenceSkills as $skill) {
+        skillmap_db_query(
+            'INSERT IGNORE INTO skills (category_id, name, description, difficulty, status)
+             VALUES ((SELECT id FROM skill_categories WHERE name = ? LIMIT 1), ?, ?, ?, ?)',
+            'sssis',
+            $skill
+        );
+    }
+
+    $referenceRoles = [
+        ['Web Developer', 'Career', 'Build modern web applications'],
+        ['Data Analyst', 'Career', 'Analyse and present data insights'],
+        ['IT Support', 'Career', 'Provide technical support'],
+        ['Computer Scientist', 'Career', 'Apply computing theory, software design, and data methods'],
+        ['Software Engineer', 'Career', 'Design, build, test, and maintain reliable software systems'],
+        ['Cybersecurity Analyst', 'Career', 'Monitor risks, protect systems, and respond to security incidents'],
+        ['UI/UX Designer', 'Career', 'Design useful, accessible, and polished digital product experiences'],
+        ['Database Administrator', 'Career', 'Maintain secure, reliable, and high-performing database systems'],
+        ['Business Analyst', 'Career', 'Bridge stakeholder needs, process improvements, and technical delivery'],
+        ['Research Assistant', 'Career', 'Support academic or industry research with data, writing, and analysis'],
+        ['Project Manager', 'Lead', 'Coordinate scope, timelines, risks, and team delivery'],
+        ['Team Leader', 'Lead', 'Guide a team through communication, ownership, and delivery priorities'],
+        ['Student Club President', 'Lead', 'Lead student organisations'],
+    ];
+    foreach ($referenceRoles as $role) {
+        skillmap_db_query('INSERT IGNORE INTO career_roles (name, type, description) VALUES (?, ?, ?)', 'sss', $role);
+    }
+
+    $referenceBenchmarks = [
+        ['Web Developer', 'PHP', 4, 'Critical'],
+        ['Web Developer', 'MySQL', 4, 'Critical'],
+        ['Web Developer', 'JavaScript', 4, 'Critical'],
+        ['Web Developer', 'Bootstrap 5', 3, 'Important'],
+        ['Web Developer', 'Git', 3, 'Important'],
+        ['Web Developer', 'API Integration', 4, 'Important'],
+        ['Web Developer', 'Project Planning', 3, 'Optional'],
+        ['Data Analyst', 'MySQL', 4, 'Critical'],
+        ['Data Analyst', 'Python', 4, 'Critical'],
+        ['Data Analyst', 'Statistics', 4, 'Critical'],
+        ['Data Analyst', 'Data Visualization', 4, 'Important'],
+        ['Data Analyst', 'Research Writing', 3, 'Important'],
+        ['IT Support', 'Troubleshooting', 4, 'Critical'],
+        ['IT Support', 'Network Basics', 4, 'Critical'],
+        ['IT Support', 'Customer Support', 3, 'Important'],
+        ['IT Support', 'MySQL', 2, 'Optional'],
+        ['IT Support', 'Git', 2, 'Optional'],
+        ['Computer Scientist', 'Python', 4, 'Critical'],
+        ['Computer Scientist', 'Git', 3, 'Important'],
+        ['Computer Scientist', 'MySQL', 3, 'Important'],
+        ['Computer Scientist', 'Statistics', 3, 'Important'],
+        ['Computer Scientist', 'Research Writing', 4, 'Important'],
+        ['Student Club President', 'Team Coordination', 4, 'Critical'],
+        ['Student Club President', 'Event Planning', 4, 'Critical'],
+        ['Student Club President', 'Public Speaking', 4, 'Important'],
+        ['Student Club President', 'Project Planning', 3, 'Important'],
+        ['Student Club President', 'Customer Support', 3, 'Optional'],
+        ['Software Engineer', 'JavaScript', 4, 'Critical'],
+        ['Software Engineer', 'Git', 4, 'Critical'],
+        ['Software Engineer', 'API Integration', 4, 'Important'],
+        ['Software Engineer', 'Problem Solving', 4, 'Critical'],
+        ['Software Engineer', 'Cloud Fundamentals', 3, 'Important'],
+        ['Software Engineer', 'Agile Methodology', 3, 'Important'],
+        ['Cybersecurity Analyst', 'Cybersecurity Basics', 4, 'Critical'],
+        ['Cybersecurity Analyst', 'Network Basics', 4, 'Critical'],
+        ['Cybersecurity Analyst', 'Troubleshooting', 4, 'Important'],
+        ['Cybersecurity Analyst', 'Problem Solving', 4, 'Important'],
+        ['Cybersecurity Analyst', 'Research Writing', 3, 'Optional'],
+        ['UI/UX Designer', 'UI/UX Design', 4, 'Critical'],
+        ['UI/UX Designer', 'Public Speaking', 3, 'Important'],
+        ['UI/UX Designer', 'Requirements Analysis', 4, 'Critical'],
+        ['UI/UX Designer', 'Bootstrap 5', 3, 'Important'],
+        ['UI/UX Designer', 'Research Writing', 3, 'Optional'],
+        ['Database Administrator', 'MySQL', 4, 'Critical'],
+        ['Database Administrator', 'Database Administration', 4, 'Critical'],
+        ['Database Administrator', 'Troubleshooting', 4, 'Important'],
+        ['Database Administrator', 'Cybersecurity Basics', 3, 'Important'],
+        ['Database Administrator', 'Cloud Fundamentals', 3, 'Optional'],
+        ['Business Analyst', 'Requirements Analysis', 4, 'Critical'],
+        ['Business Analyst', 'Data Visualization', 3, 'Important'],
+        ['Business Analyst', 'Public Speaking', 3, 'Important'],
+        ['Business Analyst', 'Project Planning', 3, 'Important'],
+        ['Business Analyst', 'Research Writing', 4, 'Critical'],
+        ['Project Manager', 'Project Planning', 4, 'Critical'],
+        ['Project Manager', 'Agile Methodology', 4, 'Critical'],
+        ['Project Manager', 'Team Coordination', 4, 'Critical'],
+        ['Project Manager', 'Public Speaking', 3, 'Important'],
+        ['Project Manager', 'Requirements Analysis', 3, 'Important'],
+        ['Research Assistant', 'Research Writing', 4, 'Critical'],
+        ['Research Assistant', 'Statistics', 4, 'Critical'],
+        ['Research Assistant', 'Data Visualization', 3, 'Important'],
+        ['Research Assistant', 'Python', 3, 'Important'],
+        ['Research Assistant', 'Problem Solving', 4, 'Important'],
+        ['Team Leader', 'Team Coordination', 4, 'Critical'],
+        ['Team Leader', 'Project Planning', 4, 'Important'],
+        ['Team Leader', 'Public Speaking', 3, 'Important'],
+        ['Team Leader', 'Agile Methodology', 3, 'Important'],
+        ['Team Leader', 'Problem Solving', 4, 'Critical'],
+    ];
+    foreach ($referenceBenchmarks as $benchmark) {
+        skillmap_db_query(
+            'INSERT INTO role_skill_benchmarks (role_id, skill_id, required_rating, priority)
+             SELECT cr.id, s.id, ?, ?
+             FROM career_roles cr
+             INNER JOIN skills s ON s.name = ?
+             WHERE cr.name = ?
+               AND NOT EXISTS (
+                   SELECT 1
+                   FROM role_skill_benchmarks rb
+                   WHERE rb.role_id = cr.id AND rb.skill_id = s.id
+               )
+             LIMIT 1',
+            'isss',
+            [(int) $benchmark[2], (string) $benchmark[3], (string) $benchmark[1], (string) $benchmark[0]]
+        );
+    }
 }
 
 /**

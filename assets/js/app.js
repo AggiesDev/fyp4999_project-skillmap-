@@ -116,6 +116,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  document.querySelectorAll('[data-search-input]').forEach((input) => {
+    const targetSelector = input.getAttribute('data-search-target');
+    const scope = targetSelector ? document.querySelector(targetSelector) : input.closest('[data-search-scope]');
+    if (!scope) return;
+
+    const emptyStateSelector = input.getAttribute('data-search-empty');
+    const emptyState = emptyStateSelector ? document.querySelector(emptyStateSelector) : scope.querySelector('[data-search-empty]');
+    const items = Array.from(scope.querySelectorAll('[data-search-item]'));
+
+    const applySearch = () => {
+      const query = input.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        const haystack = (item.getAttribute('data-search-text') || item.textContent || '').toLowerCase();
+        const isVisible = query === '' || haystack.includes(query);
+        item.classList.toggle('d-none', !isVisible);
+        if (isVisible) visibleCount += 1;
+      });
+
+      if (emptyState) {
+        emptyState.classList.toggle('d-none', visibleCount > 0 || query === '');
+      }
+    };
+
+    input.addEventListener('input', applySearch);
+    applySearch();
+  });
+
   const profilePreview = document.querySelector('.profile-icon-preview');
   const iconRadios = document.querySelectorAll('input[name="profile_icon"]');
   const genderSelects = document.querySelectorAll('[data-profile-gender]');
@@ -146,14 +175,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminSidebarToggle = document.querySelector('[data-admin-sidebar-toggle]');
   if (adminSidebarToggle) {
     const storageKey = 'skillmap-admin-sidebar-collapsed';
+    const mobileMedia = window.matchMedia('(max-width: 991.98px)');
     const applySidebarState = (collapsed) => {
       document.body.classList.toggle('admin-sidebar-collapsed', collapsed);
       localStorage.setItem(storageKey, collapsed ? '1' : '0');
     };
+    const syncSidebarMode = () => {
+      if (mobileMedia.matches) {
+        document.body.classList.remove('admin-sidebar-collapsed');
+      } else {
+        document.body.classList.remove('admin-sidebar-open');
+        applySidebarState(localStorage.getItem(storageKey) === '1');
+      }
+    };
 
-    applySidebarState(localStorage.getItem(storageKey) === '1');
+    syncSidebarMode();
     adminSidebarToggle.addEventListener('click', () => {
+      if (mobileMedia.matches) {
+        document.body.classList.toggle('admin-sidebar-open');
+        return;
+      }
       applySidebarState(!document.body.classList.contains('admin-sidebar-collapsed'));
     });
+    mobileMedia.addEventListener?.('change', syncSidebarMode);
   }
 });

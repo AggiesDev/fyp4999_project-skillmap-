@@ -145,6 +145,11 @@ foreach ($items as $item) {
 
 $totalItems = count($items);
 $completePct = $totalItems > 0 ? (int) round((count($completed) / $totalItems) * 100) : 0;
+$roadmapStatusItems = [
+    ['label' => 'Missing', 'count' => count($missing), 'class' => 'danger', 'icon' => 'bi-exclamation-circle'],
+    ['label' => 'Partial', 'count' => count($partial), 'class' => 'warning', 'icon' => 'bi-hourglass-split'],
+    ['label' => 'Done', 'count' => count($completed), 'class' => 'success', 'icon' => 'bi-check2-circle'],
+];
 ?>
 <!doctype html>
 <html lang="en">
@@ -159,14 +164,30 @@ $completePct = $totalItems > 0 ? (int) round((count($completed) / $totalItems) *
 <body>
   <?php require __DIR__ . '/includes/navbar.php'; ?>
   <main class="container py-4 py-lg-5">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-      <div>
-        <h1 class="fw-bold mb-1">My Learning Roadmap</h1>
-        <div class="text-muted">
-          <?= $analysis ? htmlspecialchars($analysis['role_name'], ENT_QUOTES, 'UTF-8') . ' - ' . (int) round((float) $analysis['match_score']) . '% match' : 'No analysis available yet' ?>
+    <div class="skillmap-tool-header mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <div class="skillmap-kicker">Learning plan</div>
+          <h1 class="fw-bold mb-1">My Learning Roadmap</h1>
+          <div class="text-muted">
+            <?= $analysis ? htmlspecialchars($analysis['role_name'], ENT_QUOTES, 'UTF-8') . ' - ' . (int) round((float) $analysis['match_score']) . '% match' : 'No analysis available yet' ?>
+          </div>
         </div>
+        <?php if ($analysis): ?>
+          <div class="skillmap-roadmap-metrics">
+            <?php foreach ($roadmapStatusItems as $statusItem): ?>
+              <div class="skillmap-mini-metric">
+                <i class="bi <?= htmlspecialchars($statusItem['icon'], ENT_QUOTES, 'UTF-8') ?> text-<?= htmlspecialchars($statusItem['class'], ENT_QUOTES, 'UTF-8') ?>"></i>
+                <span class="fw-bold"><?= (int) $statusItem['count'] ?></span>
+                <span class="text-muted"><?= htmlspecialchars($statusItem['label'], ENT_QUOTES, 'UTF-8') ?></span>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
       </div>
-      <div style="min-width:260px;" class="w-100 w-md-auto"><?= skillmap_percent_bar($completePct) ?></div>
+      <?php if ($analysis): ?>
+        <div class="mt-4"><?= skillmap_percent_bar($completePct) ?></div>
+      <?php endif; ?>
     </div>
 
     <?php if ($message !== ''): ?>
@@ -184,32 +205,41 @@ $completePct = $totalItems > 0 ? (int) round((count($completed) / $totalItems) *
     <?php elseif ($items === []): ?>
       <div class="alert alert-success">Your latest analysis has no missing or partial skills.</div>
     <?php else: ?>
-      <div class="row g-4">
+      <div class="row g-4" id="roadmapSearch">
         <div class="col-lg-8">
-          <div class="d-grid gap-4">
+          <div class="skillmap-work-panel">
+            <div class="skillmap-panel-toolbar">
+              <div class="skillmap-search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" type="search" placeholder="Search roadmap skills, resources, platform, or status" data-search-input data-search-target="#roadmapSearch">
+              </div>
+            </div>
+            <div class="skillmap-panel-body d-grid gap-4">
             <?php
               $sections = [
-                ['title' => 'Priority 1 - Missing Skills', 'badge' => 'Missing', 'items' => $missing, 'class' => 'left-accent-red', 'bar' => 'danger'],
-                ['title' => 'Priority 2 - Partially Have', 'badge' => 'Partial', 'items' => $partial, 'class' => 'left-accent-yellow', 'bar' => 'warning'],
-                ['title' => 'Completed Skills', 'badge' => 'Completed', 'items' => $completed, 'class' => 'left-accent-green', 'bar' => 'success'],
+                ['title' => 'Priority 1 - Missing Skills', 'badge' => 'Missing', 'items' => $missing, 'class' => 'danger', 'bar' => 'danger', 'icon' => 'bi-exclamation-circle'],
+                ['title' => 'Priority 2 - Partially Have', 'badge' => 'Partial', 'items' => $partial, 'class' => 'warning', 'bar' => 'warning', 'icon' => 'bi-hourglass-split'],
+                ['title' => 'Completed Skills', 'badge' => 'Completed', 'items' => $completed, 'class' => 'success', 'bar' => 'success', 'icon' => 'bi-check2-circle'],
               ];
             ?>
             <?php foreach ($sections as $section): ?>
-              <div class="card <?= $section['class'] ?>">
-                <div class="card-body p-4">
-                  <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2 class="h5 fw-bold mb-0"><?= htmlspecialchars($section['title'], ENT_QUOTES, 'UTF-8') ?></h2>
-                    <span class="badge text-bg-light border"><?= count($section['items']) ?> <?= htmlspecialchars($section['badge'], ENT_QUOTES, 'UTF-8') ?></span>
+              <section class="skillmap-roadmap-section skillmap-roadmap-section-<?= htmlspecialchars($section['class'], ENT_QUOTES, 'UTF-8') ?>">
+                <div class="skillmap-section-heading mb-3">
+                  <div>
+                    <h2 class="h5 fw-bold mb-1"><i class="bi <?= htmlspecialchars($section['icon'], ENT_QUOTES, 'UTF-8') ?> me-2"></i><?= htmlspecialchars($section['title'], ENT_QUOTES, 'UTF-8') ?></h2>
+                    <div class="text-muted small">Sorted by gap size and priority.</div>
                   </div>
+                  <span class="badge text-bg-light border"><?= count($section['items']) ?> <?= htmlspecialchars($section['badge'], ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
 
                   <?php if ($section['items'] === []): ?>
                     <div class="alert alert-light border mb-0">No skills in this section.</div>
                   <?php else: ?>
                     <div class="d-grid gap-3">
                       <?php foreach ($section['items'] as $item): ?>
-                        <div class="border rounded-4 p-3">
-                          <div class="d-flex flex-wrap justify-content-between gap-3">
-                            <div>
+                        <div class="skillmap-roadmap-item" data-search-item data-search-text="<?= htmlspecialchars($item['skill_name'] . ' ' . $section['badge'] . ' ' . $item['title'] . ' ' . $item['platform'] . ' ' . $item['roadmap_status'], ENT_QUOTES, 'UTF-8') ?>">
+                          <div class="skillmap-roadmap-item-top">
+                            <div class="min-w-0">
                               <div class="fw-semibold"><?= htmlspecialchars($item['skill_name'], ENT_QUOTES, 'UTF-8') ?></div>
                               <?php if ($item['title']): ?>
                                 <div class="small text-muted">
@@ -220,7 +250,7 @@ $completePct = $totalItems > 0 ? (int) round((count($completed) / $totalItems) *
                                 <div class="small text-muted">No resource available yet</div>
                               <?php endif; ?>
                             </div>
-                            <div class="text-end">
+                            <div class="skillmap-resource-meta">
                               <div class="small text-muted"><?= $item['duration_hours'] !== null ? htmlspecialchars((string) $item['duration_hours'], ENT_QUOTES, 'UTF-8') . ' hours' : '-' ?></div>
                               <?php if ($item['title']): ?>
                                 <?= (int) $item['is_free'] === 1 ? '<span class="badge text-bg-success">Free</span>' : '<span class="badge text-bg-light border">Paid</span>' ?>
@@ -228,26 +258,27 @@ $completePct = $totalItems > 0 ? (int) round((count($completed) / $totalItems) *
                             </div>
                           </div>
                           <div class="progress mt-3"><div class="progress-bar bg-<?= htmlspecialchars($section['bar'], ENT_QUOTES, 'UTF-8') ?>" style="width: <?= (int) $item['progress_pct'] ?>%"></div></div>
-                          <div class="d-flex flex-wrap gap-2 mt-3">
+                          <div class="skillmap-action-row mt-3">
                             <?php if ($item['url']): ?>
-                              <a class="btn btn-primary btn-sm" href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener">Open Resource</a>
+                              <a class="btn btn-primary btn-sm" href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i>Open Resource</a>
                             <?php endif; ?>
                             <form method="post">
                               <input type="hidden" name="skill_id" value="<?= (int) $item['skill_id'] ?>">
-                              <button class="btn btn-outline-primary btn-sm" type="submit" name="roadmap_action" value="Started">Mark Started</button>
+                              <button class="btn btn-outline-primary btn-sm" type="submit" name="roadmap_action" value="Started"><i class="bi bi-play-circle me-1"></i>Started</button>
                             </form>
                             <form method="post">
                               <input type="hidden" name="skill_id" value="<?= (int) $item['skill_id'] ?>">
-                              <button class="btn btn-outline-success btn-sm" type="submit" name="roadmap_action" value="Completed">Mark Completed</button>
+                              <button class="btn btn-outline-success btn-sm" type="submit" name="roadmap_action" value="Completed"><i class="bi bi-check2-circle me-1"></i>Completed</button>
                             </form>
                           </div>
                         </div>
                       <?php endforeach; ?>
                     </div>
                   <?php endif; ?>
-                </div>
-              </div>
+              </section>
             <?php endforeach; ?>
+            <div class="alert alert-light border mb-0 d-none" data-search-empty>No matching roadmap items found.</div>
+            </div>
           </div>
         </div>
 
@@ -257,14 +288,17 @@ $completePct = $totalItems > 0 ? (int) round((count($completed) / $totalItems) *
               <div class="card-body p-4 text-center">
                 <h2 class="h5 fw-bold mb-3">Roadmap Summary</h2>
                 <?= skillmap_progress_ring($completePct) ?>
-                <div class="row g-3 mt-3 text-start">
-                  <div class="col-4"><div class="small text-danger">Missing</div><div class="fw-bold"><?= count($missing) ?></div></div>
-                  <div class="col-4"><div class="small text-warning">Partial</div><div class="fw-bold"><?= count($partial) ?></div></div>
-                  <div class="col-4"><div class="small text-success">Done</div><div class="fw-bold"><?= count($completed) ?></div></div>
+                <div class="d-grid gap-2 mt-4 text-start">
+                  <?php foreach ($roadmapStatusItems as $statusItem): ?>
+                    <div class="skillmap-summary-line">
+                      <span><i class="bi <?= htmlspecialchars($statusItem['icon'], ENT_QUOTES, 'UTF-8') ?> text-<?= htmlspecialchars($statusItem['class'], ENT_QUOTES, 'UTF-8') ?> me-2"></i><?= htmlspecialchars($statusItem['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                      <strong><?= (int) $statusItem['count'] ?></strong>
+                    </div>
+                  <?php endforeach; ?>
                 </div>
                 <hr>
                 <div class="small text-muted"><?= number_format($totalHours, 1) ?> hours estimated</div>
-                <a href="/fyp_skillmapsystem/users/analyse.php" class="link-primary text-decoration-none d-inline-block mt-2">Switch Target Role</a>
+                <a href="/fyp_skillmapsystem/users/analyse.php" class="btn btn-outline-primary btn-sm mt-3"><i class="bi bi-arrow-repeat me-1"></i>Switch Target Role</a>
               </div>
             </div>
           </div>

@@ -112,16 +112,20 @@ $distributionValues = array_values($ratingCounts);
 
     <div class="row g-4">
       <div class="col-xl-3">
-        <div class="card h-100">
+        <div class="card h-100" data-search-scope>
           <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h2 class="h5 fw-bold mb-0">Students</h2>
               <span class="badge text-bg-light border"><?= count($students) ?> total</span>
             </div>
+            <div class="skillmap-search mb-3">
+              <i class="bi bi-search"></i>
+              <input class="form-control" type="search" placeholder="Search students" data-search-input>
+            </div>
             <div class="skillmap-student-review-list">
               <?php foreach ($students as $student): ?>
                 <?php $isSelected = (int) $student['id'] === $selectedStudentId; ?>
-                <a class="skillmap-review-student <?= $isSelected ? 'active' : '' ?>" href="/fyp_skillmapsystem/admin/reviews.php?student_id=<?= (int) $student['id'] ?>">
+                <a class="skillmap-review-student <?= $isSelected ? 'active' : '' ?>" href="/fyp_skillmapsystem/admin/reviews.php?student_id=<?= (int) $student['id'] ?>" data-search-item data-search-text="<?= htmlspecialchars($student['name'] . ' ' . $student['email'] . ' ' . $student['programme'] . ' ' . $student['year_level'] . ' ' . $student['status'], ENT_QUOTES, 'UTF-8') ?>">
                   <?php if (!empty($student['profile_icon'])): ?>
                     <img class="table-profile-icon" src="/fyp_skillmapsystem/<?= htmlspecialchars((string) $student['profile_icon'], ENT_QUOTES, 'UTF-8') ?>" alt="">
                   <?php else: ?>
@@ -137,6 +141,7 @@ $distributionValues = array_values($ratingCounts);
               <?php if ($students === []): ?>
                 <div class="alert alert-light border mb-0">No student records were found.</div>
               <?php endif; ?>
+              <div class="alert alert-light border mb-0 d-none" data-search-empty>No matching students found.</div>
             </div>
           </div>
         </div>
@@ -204,7 +209,7 @@ $distributionValues = array_values($ratingCounts);
             </div>
           </div>
 
-          <form method="post" class="card">
+          <form method="post" class="card" data-search-scope>
             <div class="card-body p-4">
               <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
                 <div>
@@ -214,10 +219,14 @@ $distributionValues = array_values($ratingCounts);
                 <input type="hidden" name="student_id" value="<?= (int) $selectedStudent['id'] ?>">
                 <button class="btn btn-primary" type="submit" name="save_review"><i class="bi bi-check2 me-1"></i>Save Review</button>
               </div>
+              <div class="skillmap-search mb-4">
+                <i class="bi bi-search"></i>
+                <input class="form-control" type="search" placeholder="Search skills or categories" data-search-input>
+              </div>
 
               <div class="d-grid gap-3">
                 <?php foreach ($skills as $category => $group): ?>
-                  <div class="border rounded-4 p-3 p-md-4">
+                  <div class="border rounded-4 p-3 p-md-4" data-search-item data-search-text="<?= htmlspecialchars($category . ' ' . implode(' ', array_column($group['items'], 'name')) . ' ' . implode(' ', array_column($group['items'], 'description')), ENT_QUOTES, 'UTF-8') ?>">
                     <?php $stats = $categoryStats[$category] ?? ['total' => 0, 'rated' => 0, 'score_sum' => 0]; ?>
                     <?php $categoryPct = (int) round(($stats['score_sum'] / max((int) $stats['total'] * 5, 1)) * 100); ?>
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -240,6 +249,7 @@ $distributionValues = array_values($ratingCounts);
                     </div>
                   </div>
                 <?php endforeach; ?>
+                <div class="alert alert-light border mb-0 d-none" data-search-empty>No matching skills found.</div>
               </div>
             </div>
           </form>

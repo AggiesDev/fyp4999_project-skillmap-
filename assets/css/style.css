@@ -522,6 +522,7 @@ body:has(.skillmap-admin-sidebar) {
   background: linear-gradient(180deg, #0f172a 0%, #1e293b 58%, #1d4ed8 100%);
   color: #fff;
   box-shadow: 18px 0 42px rgba(15, 23, 42, .18);
+  transition: width .18s ease, transform .18s ease;
 }
 
 .skillmap-admin-brand {
@@ -599,10 +600,13 @@ body:has(.skillmap-admin-sidebar) {
 }
 
 body:has(.skillmap-admin-sidebar) main {
-  max-width: 1440px;
+  width: calc(100% - 280px);
+  max-width: none;
+  box-sizing: border-box;
   margin-left: 280px;
   padding-left: 1.5rem !important;
   padding-right: 1.5rem !important;
+  transition: margin-left .18s ease;
 }
 
 body.admin-sidebar-collapsed .skillmap-admin-sidebar {
@@ -610,6 +614,7 @@ body.admin-sidebar-collapsed .skillmap-admin-sidebar {
 }
 
 body.admin-sidebar-collapsed main {
+  width: calc(100% - 86px);
   margin-left: 86px;
 }
 
@@ -655,6 +660,33 @@ body:has(.skillmap-admin-sidebar) .table > :not(caption) > * > * {
   padding: .9rem .95rem;
 }
 
+body:has(.skillmap-admin-sidebar) .table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body:has(.skillmap-admin-sidebar) .table {
+  min-width: 760px;
+}
+
+body:has(.skillmap-admin-sidebar) .skillmap-actions-col {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  min-width: 112px;
+  white-space: nowrap;
+  background: #fff;
+  box-shadow: -10px 0 18px rgba(255,255,255,.9);
+}
+
+body:has(.skillmap-admin-sidebar) thead .skillmap-actions-col {
+  z-index: 3;
+}
+
+body:has(.skillmap-admin-sidebar) .skillmap-actions-col .d-flex {
+  flex-wrap: nowrap !important;
+}
+
 body:has(.skillmap-admin-sidebar) .table tbody tr:hover {
   background: #f8fafc;
 }
@@ -663,19 +695,245 @@ body:has(.skillmap-admin-sidebar) .btn {
   border-radius: .65rem;
 }
 
+.skillmap-search {
+  position: relative;
+}
+
+.skillmap-search i {
+  position: absolute;
+  left: .95rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sm-muted);
+  pointer-events: none;
+}
+
+.skillmap-search .form-control {
+  min-height: 2.75rem;
+  padding-left: 2.55rem;
+  border-radius: .75rem;
+  border-color: var(--sm-border);
+}
+
+.skillmap-role-scroll {
+  display: grid;
+  gap: .65rem;
+  max-height: min(520px, calc(100vh - 15rem));
+  overflow-y: auto;
+  padding-right: .15rem;
+}
+
+.skillmap-role-list-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .55rem;
+  padding: .65rem;
+  border: 1px solid var(--sm-border);
+  border-radius: .8rem;
+  background: #fff;
+}
+
+.skillmap-role-list-item.active {
+  border-color: rgba(37,99,235,.4);
+  background: #eff6ff;
+  box-shadow: 0 8px 20px rgba(37,99,235,.08);
+}
+
+.skillmap-role-list-main {
+  min-width: 0;
+  color: var(--sm-text);
+  text-decoration: none;
+}
+
+.skillmap-role-list-main:hover {
+  color: var(--sm-primary);
+}
+
+.skillmap-role-list-actions {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.skillmap-role-list-actions .btn {
+  width: 2rem;
+  height: 2rem;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+}
+
+.skillmap-tool-header {
+  padding: 1.25rem;
+  border: 1px solid rgba(226,232,240,.9);
+  border-radius: 1rem;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .06);
+  backdrop-filter: blur(10px);
+}
+
+.skillmap-kicker {
+  color: var(--sm-primary);
+  font-size: .78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.skillmap-pill,
+.skillmap-mini-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 2.35rem;
+  padding: .45rem .75rem;
+  border: 1px solid var(--sm-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--sm-text);
+  font-size: .86rem;
+  font-weight: 700;
+}
+
+.skillmap-work-panel {
+  overflow: hidden;
+  border: 1px solid var(--sm-border);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .06);
+}
+
+.skillmap-panel-toolbar {
+  padding: 1rem 1rem 0;
+  border-bottom: 1px solid transparent;
+}
+
+.skillmap-panel-body {
+  padding: 1rem;
+}
+
+.skillmap-scroll-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: .25rem;
+}
+
+.skillmap-scroll-tabs .nav-link {
+  white-space: nowrap;
+}
+
+.skillmap-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.skillmap-skill-card,
+.skillmap-roadmap-item {
+  border: 1px solid var(--sm-border);
+  border-radius: .9rem;
+  background: #fff;
+  padding: 1rem;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .04);
+}
+
+.skillmap-skill-card-top,
+.skillmap-roadmap-item-top,
+.skillmap-rating-row,
+.skillmap-action-row,
+.skillmap-roadmap-metrics {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+}
+
+.skillmap-skill-card-top,
+.skillmap-roadmap-item-top {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.skillmap-rating-row,
+.skillmap-action-row {
+  flex-wrap: wrap;
+}
+
+.skillmap-difficulty {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: .25rem .55rem;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--sm-muted);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.skillmap-roadmap-metrics {
+  flex-wrap: wrap;
+}
+
+.skillmap-roadmap-section {
+  padding: 1rem;
+  border: 1px solid var(--sm-border);
+  border-radius: 1rem;
+  background: #fbfdff;
+}
+
+.skillmap-roadmap-section-danger { border-left: 4px solid var(--sm-danger); }
+.skillmap-roadmap-section-warning { border-left: 4px solid var(--sm-warning); }
+.skillmap-roadmap-section-success { border-left: 4px solid var(--sm-success); }
+
+.skillmap-resource-meta {
+  min-width: 96px;
+  text-align: right;
+}
+
+.skillmap-summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .65rem .75rem;
+  border: 1px solid var(--sm-border);
+  border-radius: .75rem;
+  background: #f8fafc;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
 @media (max-width: 991.98px) {
   .skillmap-admin-sidebar {
-    width: 86px;
+    width: min(280px, calc(100vw - 4.5rem));
+    transform: translateX(calc(-100% + 4.25rem));
+    padding: .8rem;
   }
 
   body:has(.skillmap-admin-sidebar) main {
-    margin-left: 86px;
+    width: calc(100% - 4.25rem);
+    margin-left: 4.25rem;
     padding-left: 1rem !important;
     padding-right: 1rem !important;
   }
 
-  .skillmap-admin-brand {
-    flex-direction: column;
+  body.admin-sidebar-open .skillmap-admin-sidebar {
+    transform: translateX(0);
+    width: min(280px, calc(100vw - 1rem));
+  }
+
+  body.admin-sidebar-open main {
+    width: 100%;
+    margin-left: 0;
+    opacity: .55;
+    pointer-events: none;
+  }
+
+  .skillmap-admin-toggle {
+    align-self: flex-end;
   }
 
   .skillmap-admin-brand-text,
@@ -683,11 +941,55 @@ body:has(.skillmap-admin-sidebar) .btn {
   .skillmap-admin-user,
   .skillmap-license {
     display: none;
+    opacity: 0;
+  }
+
+  body.admin-sidebar-open .skillmap-admin-brand-text,
+  body.admin-sidebar-open .skillmap-admin-menu-link span,
+  body.admin-sidebar-open .skillmap-admin-user,
+  body.admin-sidebar-open .skillmap-license {
+    display: initial;
+    opacity: 1;
+  }
+
+  body.admin-sidebar-open .skillmap-license,
+  body.admin-sidebar-open .skillmap-admin-user {
+    display: block;
   }
 
   .skillmap-admin-menu-link {
-    justify-content: center;
-    padding-inline: .65rem;
+    white-space: nowrap;
+  }
+
+  body:not(.admin-sidebar-open) .skillmap-admin-menu-link {
+    justify-content: flex-end;
+    padding-right: .55rem;
+  }
+
+  body:not(.admin-sidebar-open) .skillmap-admin-brand {
+    justify-content: flex-end;
+  }
+
+  body:not(.admin-sidebar-open) .skillmap-admin-brand a {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .skillmap-tool-header {
+    padding: 1rem;
+  }
+
+  .skillmap-section-heading,
+  .skillmap-skill-card-top,
+  .skillmap-roadmap-item-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .skillmap-resource-meta {
+    min-width: 0;
+    text-align: left;
   }
 }
 

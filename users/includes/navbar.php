@@ -11,6 +11,7 @@ $navItems = [
     ['key' => 'profile', 'label' => 'Profile', 'icon' => 'bi-person', 'href' => '/fyp_skillmapsystem/users/profile.php'],
     ['key' => 'assessment', 'label' => 'Assessment', 'icon' => 'bi-stars', 'href' => '/fyp_skillmapsystem/users/skills_assessment.php'],
     ['key' => 'analyse', 'label' => 'Analyse', 'icon' => 'bi-search', 'href' => '/fyp_skillmapsystem/users/analyse.php'],
+    ['key' => 'benchmarks', 'label' => 'Benchmarks', 'icon' => 'bi-diagram-3', 'href' => '/fyp_skillmapsystem/users/benchmarks.php'],
     ['key' => 'roadmap', 'label' => 'Roadmap', 'icon' => 'bi-map', 'href' => '/fyp_skillmapsystem/users/roadmap.php'],
     ['key' => 'progress', 'label' => 'Progress', 'icon' => 'bi-graph-up', 'href' => '/fyp_skillmapsystem/users/progress.php'],
     ['key' => 'report', 'label' => 'Report', 'icon' => 'bi-file-earmark-text', 'href' => '/fyp_skillmapsystem/users/report.php'],

@@ -422,21 +422,27 @@ $formOptions = admin_user_form_options($pdo);
       </div>
 
       <div class="col-xl-8">
-        <div class="card">
+        <div class="card" data-search-scope>
+          <div class="card-body p-3 p-lg-4">
+            <div class="skillmap-search">
+              <i class="bi bi-search"></i>
+              <input class="form-control" type="search" placeholder="Search users, roles, programme, email, or status" data-search-input>
+            </div>
+          </div>
           <div class="card-body p-0">
             <div class="table-responsive">
               <table class="table align-middle mb-0">
-                <thead><tr><th>User</th><th>Role</th><th>Programme</th><th>Analyses</th><th>Best Match</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>User</th><th>Role</th><th>Programme</th><th>Analyses</th><th>Best Match</th><th>Status</th><th class="skillmap-actions-col">Actions</th></tr></thead>
                 <tbody>
                   <?php foreach ($users as $row): ?>
-                    <tr>
+                    <tr data-search-item data-search-text="<?= htmlspecialchars($row['name'] . ' ' . $row['username'] . ' ' . $row['email'] . ' ' . $row['role'] . ' ' . $row['programme'] . ' ' . $row['year_level'] . ' ' . $row['status'] . ' ' . $row['top_role'], ENT_QUOTES, 'UTF-8') ?>">
                       <td><div class="d-flex align-items-center gap-3"><?php if (!empty($row['profile_icon'])): ?><img class="table-profile-icon bg-primary" src="/fyp_skillmapsystem/<?= htmlspecialchars($row['profile_icon'], ENT_QUOTES, 'UTF-8') ?>" alt=""><?php else: ?><div class="avatar-circle bg-primary"><?= htmlspecialchars($row['avatar_initials'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?><div><div class="fw-semibold"><?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?></div><div class="small text-muted"><?= htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($row['username'], ENT_QUOTES, 'UTF-8') ?></div></div></div></td>
                       <td><span class="badge text-bg-light border"><?= htmlspecialchars(ucfirst($row['role']), ENT_QUOTES, 'UTF-8') ?></span></td>
                       <td><?= htmlspecialchars($row['programme'], ENT_QUOTES, 'UTF-8') ?><div class="small text-muted"><?= htmlspecialchars($row['year_level'], ENT_QUOTES, 'UTF-8') ?></div></td>
                       <td><?= (int) $row['analyses'] ?></td>
                       <td><?= (int) $row['best_match'] ?>%<div class="small text-muted"><?= htmlspecialchars($row['top_role'], ENT_QUOTES, 'UTF-8') ?></div></td>
                       <td><?= skillmap_status_badge($row['status']) ?></td>
-                      <td>
+                      <td class="skillmap-actions-col">
                         <div class="d-flex flex-wrap gap-2">
                           <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/users.php?edit=<?= (int) $row['id'] ?>"><i class="bi bi-pencil"></i></a>
                           <?php if ($row['role'] === 'student'): ?><a class="btn btn-sm btn-outline-secondary" href="/fyp_skillmapsystem/admin/reviews.php?student_id=<?= (int) $row['id'] ?>"><i class="bi bi-person-check"></i></a><?php endif; ?>
@@ -453,6 +459,7 @@ $formOptions = admin_user_form_options($pdo);
                     </tr>
                   <?php endforeach; ?>
                   <?php if ($users === []): ?><tr><td colspan="7" class="text-center text-muted py-4">No users found.</td></tr><?php endif; ?>
+                  <tr class="d-none" data-search-empty><td colspan="7" class="text-center text-muted py-4">No matching users found.</td></tr>
                 </tbody>
               </table>
             </div>

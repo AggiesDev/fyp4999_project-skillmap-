@@ -118,20 +118,26 @@ $categories = $pdo->query(
       </div>
 
       <div class="col-lg-8">
-        <div class="card">
+        <div class="card" data-search-scope>
+          <div class="card-body p-3 p-lg-4">
+            <div class="skillmap-search">
+              <i class="bi bi-search"></i>
+              <input class="form-control" type="search" placeholder="Search categories, type, or icon" data-search-input>
+            </div>
+          </div>
           <div class="table-responsive">
             <table class="table align-middle mb-0">
-              <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Icon</th><th>Skills</th><th>Updated</th><th>Actions</th></tr></thead>
+              <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Icon</th><th>Skills</th><th>Updated</th><th class="skillmap-actions-col">Actions</th></tr></thead>
               <tbody>
                 <?php foreach ($categories as $index => $category): ?>
-                  <tr>
+                  <tr data-search-item data-search-text="<?= htmlspecialchars($category['name'] . ' ' . $category['type'] . ' ' . $category['icon'], ENT_QUOTES, 'UTF-8') ?>">
                     <td><?= $index + 1 ?></td>
                     <td class="fw-semibold"><i class="bi <?= htmlspecialchars($category['icon'], ENT_QUOTES, 'UTF-8') ?> me-2 text-primary"></i><?= htmlspecialchars($category['name'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><span class="badge text-bg-light border"><?= htmlspecialchars($category['type'], ENT_QUOTES, 'UTF-8') ?></span></td>
                     <td><code><?= htmlspecialchars($category['icon'], ENT_QUOTES, 'UTF-8') ?></code></td>
                     <td><?= (int) $category['skill_count'] ?></td>
                     <td><?= htmlspecialchars($category['updated'], ENT_QUOTES, 'UTF-8') ?></td>
-                    <td>
+                    <td class="skillmap-actions-col">
                       <div class="d-flex gap-2">
                         <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/categories.php?edit=<?= (int) $category['id'] ?>"><i class="bi bi-pencil"></i></a>
                         <form method="post">
@@ -144,6 +150,7 @@ $categories = $pdo->query(
                   </tr>
                 <?php endforeach; ?>
                 <?php if ($categories === []): ?><tr><td colspan="7" class="text-center text-muted py-4">No categories found.</td></tr><?php endif; ?>
+                <tr class="d-none" data-search-empty><td colspan="7" class="text-center text-muted py-4">No matching categories found.</td></tr>
               </tbody>
             </table>
           </div>

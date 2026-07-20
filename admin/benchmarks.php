@@ -187,17 +187,39 @@ $skills = $pdo->query(
 
     <div class="row g-4">
       <div class="col-xl-3">
-        <div class="card mb-4">
+        <div class="card mb-4" data-search-scope>
           <div class="card-body p-3 p-lg-4">
             <div class="fw-bold mb-3">Roles</div>
-            <div class="d-grid gap-2">
+            <div class="skillmap-search mb-3">
+              <i class="bi bi-search"></i>
+              <input class="form-control" type="search" placeholder="Search roles" data-search-input>
+            </div>
+            <div class="skillmap-role-scroll">
               <?php foreach ($roles as $role): ?>
-                <a class="btn text-start <?= (int) $role['id'] === $selectedRoleId ? 'btn-primary' : 'btn-outline-secondary' ?>" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $role['id'] ?>">
-                  <div class="d-flex justify-content-between"><span><?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?></span><span class="badge text-bg-light border"><?= htmlspecialchars($role['type'], ENT_QUOTES, 'UTF-8') ?></span></div>
-                  <div class="small opacity-75"><?= (int) $role['skills'] ?> skills · <?= (float) $role['avg_required'] ?> avg</div>
-                </a>
+                <div class="skillmap-role-list-item <?= (int) $role['id'] === $selectedRoleId ? 'active' : '' ?>" data-search-item data-search-text="<?= htmlspecialchars($role['name'] . ' ' . $role['type'] . ' ' . $role['description'], ENT_QUOTES, 'UTF-8') ?>">
+                  <a class="skillmap-role-list-main" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $role['id'] ?>">
+                    <div class="d-flex justify-content-between gap-2">
+                      <span class="fw-semibold text-truncate"><?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                      <span class="badge text-bg-light border"><?= htmlspecialchars($role['type'], ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <div class="small opacity-75"><?= (int) $role['skills'] ?> skills · <?= (float) $role['avg_required'] ?> avg</div>
+                  </a>
+                  <div class="skillmap-role-list-actions">
+                    <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $role['id'] ?>" title="Edit role" aria-label="Edit <?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?>">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <form method="post">
+                      <input type="hidden" name="action" value="delete_role">
+                      <input type="hidden" name="role_id" value="<?= (int) $role['id'] ?>">
+                      <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Delete this role?');" title="Delete role" aria-label="Delete <?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?>">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </div>
               <?php endforeach; ?>
               <?php if ($roles === []): ?><div class="alert alert-light border mb-0">No roles yet.</div><?php endif; ?>
+              <div class="alert alert-light border mb-0 d-none" data-search-empty>No matching roles found.</div>
             </div>
           </div>
         </div>
@@ -218,13 +240,6 @@ $skills = $pdo->query(
             <a class="btn btn-outline-secondary btn-sm" href="/fyp_skillmapsystem/admin/benchmarks.php?new=1">New</a>
           </div>
         </form>
-        <?php if ($roleFormRole): ?>
-          <form method="post" class="mt-2">
-            <input type="hidden" name="action" value="delete_role">
-            <input type="hidden" name="role_id" value="<?= (int) $roleFormRole['id'] ?>">
-            <button class="btn btn-outline-danger btn-sm w-100" type="submit" onclick="return confirm('Delete this role?');">Delete Selected Role</button>
-          </form>
-        <?php endif; ?>
       </div>
 
       <div class="col-xl-9">
@@ -246,19 +261,23 @@ $skills = $pdo->query(
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" data-search-scope>
           <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h2 class="h5 fw-bold mb-0"><?= htmlspecialchars((string) ($selectedRole['name'] ?? 'No Role Selected'), ENT_QUOTES, 'UTF-8') ?></h2>
               <span class="badge text-bg-light border"><?= count($benchmarks) ?> benchmarks</span>
             </div>
+            <div class="skillmap-search mb-3">
+              <i class="bi bi-search"></i>
+              <input class="form-control" type="search" placeholder="Search benchmark skills, category, priority, or rating" data-search-input>
+            </div>
             <div class="table-responsive">
               <table class="table align-middle">
-                <thead><tr><th>Skill</th><th>Category</th><th>Required Rating</th><th>Priority</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Skill</th><th>Category</th><th>Required Rating</th><th>Priority</th><th class="skillmap-actions-col">Actions</th></tr></thead>
                 <tbody>
                   <?php foreach ($benchmarks as $benchmark): ?>
-                    <tr>
-                      <td>
+                    <tr data-search-item data-search-text="<?= htmlspecialchars($benchmark['skill_name'] . ' ' . $benchmark['category'] . ' ' . $benchmark['priority'] . ' ' . $benchmark['required_rating'] . '/5', ENT_QUOTES, 'UTF-8') ?>">
+                      <td class="skillmap-actions-col">
                         <?php $editFormId = 'benchmarkEdit' . (int) $benchmark['id']; ?>
                         <form id="<?= $editFormId ?>" method="post"></form>
                         <input form="<?= $editFormId ?>" type="hidden" name="action" value="save_benchmark">
@@ -283,6 +302,7 @@ $skills = $pdo->query(
                     </tr>
                   <?php endforeach; ?>
                   <?php if ($benchmarks === []): ?><tr><td colspan="5" class="text-center text-muted py-4">No benchmarks mapped for this role yet.</td></tr><?php endif; ?>
+                  <tr class="d-none" data-search-empty><td colspan="5" class="text-center text-muted py-4">No matching benchmarks found.</td></tr>
                 </tbody>
               </table>
             </div>

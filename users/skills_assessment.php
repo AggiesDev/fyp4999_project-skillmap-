@@ -108,6 +108,20 @@ foreach ($skillRows as $skill) {
     $skillsByCategory[$skill['category']]['skills'][] = $skill;
 }
 $activeCategory = array_key_first($skillsByCategory);
+$ratedCount = count(array_filter($skillRows, static fn(array $skill): bool => (int) $skill['rating'] > 0));
+$totalCount = count($skillRows);
+$completion = $totalCount > 0 ? (int) round(($ratedCount / $totalCount) * 100) : 0;
+$categoryProgress = [];
+foreach ($skillsByCategory as $category => $group) {
+    $categoryTotal = count($group['skills']);
+    $categoryRated = count(array_filter($group['skills'], static fn(array $skill): bool => (int) $skill['rating'] > 0));
+    $categoryProgress[$category] = [
+        'icon' => $group['icon'],
+        'total' => $categoryTotal,
+        'rated' => $categoryRated,
+        'percent' => $categoryTotal > 0 ? (int) round(($categoryRated / $categoryTotal) * 100) : 0,
+    ];
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -122,14 +136,20 @@ $activeCategory = array_key_first($skillsByCategory);
 <body>
   <?php require __DIR__ . '/includes/navbar.php'; ?>
   <main class="container py-4 py-lg-5">
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
-      <div>
-        <h1 class="fw-bold mb-1">Skill Assessment</h1>
-        <div class="text-muted">Rate every active skill to unlock accurate gap analysis</div>
+    <div class="skillmap-tool-header mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <div class="skillmap-kicker">Self assessment</div>
+          <h1 class="fw-bold mb-1">Skill Assessment</h1>
+          <div class="text-muted">Rate active skills so your gap analysis and roadmap stay accurate.</div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="skillmap-pill"><i class="bi bi-check2-circle"></i><?= $ratedCount ?> / <?= $totalCount ?> rated</span>
+          <button form="assessmentForm" type="submit" class="btn btn-primary">
+            <i class="bi bi-check2 me-1"></i>Save Assessment
+          </button>
+        </div>
       </div>
-      <button form="assessmentForm" type="submit" class="btn btn-primary">
-        <i class="bi bi-check2 me-1"></i>Save Assessment
-      </button>
     </div>
 
     <?php if ($message !== ''): ?>
@@ -144,9 +164,13 @@ $activeCategory = array_key_first($skillsByCategory);
     <?php else: ?>
       <form id="assessmentForm" method="post" class="row g-4">
         <div class="col-lg-8">
-          <div class="card">
-            <div class="card-body p-4">
-              <ul class="nav nav-pills flex-wrap gap-2 mb-4">
+          <div class="skillmap-work-panel" data-search-scope>
+            <div class="skillmap-panel-toolbar">
+              <div class="skillmap-search mb-4">
+                <i class="bi bi-search"></i>
+                <input class="form-control" type="search" placeholder="Search skills, categories, or descriptions" data-search-input>
+              </div>
+              <ul class="nav nav-pills skillmap-scroll-tabs gap-2 mb-4">
                 <?php foreach ($skillsByCategory as $category => $group): ?>
                   <li class="nav-item">
                     <button type="button" class="nav-link <?= $category === $activeCategory ? 'active' : 'bg-light text-dark' ?>" data-skillmap-tab="<?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>">
@@ -155,24 +179,32 @@ $activeCategory = array_key_first($skillsByCategory);
                   </li>
                 <?php endforeach; ?>
               </ul>
+            </div>
 
+            <div class="skillmap-panel-body">
               <?php foreach ($skillsByCategory as $category => $group): ?>
                 <div data-skillmap-tab-panel="<?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>" class="<?= $category === $activeCategory ? '' : 'd-none' ?>">
+                  <div class="skillmap-section-heading mb-3">
+                    <div>
+                      <h2 class="h5 fw-bold mb-1"><i class="bi <?= htmlspecialchars($group['icon'], ENT_QUOTES, 'UTF-8') ?> me-2 text-primary"></i><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></h2>
+                      <div class="text-muted small"><?= count($group['skills']) ?> skills in this category</div>
+                    </div>
+                  </div>
                   <div class="d-grid gap-3">
                     <?php foreach ($group['skills'] as $skill): ?>
                       <?php $ratingValue = isset($_POST['ratings'][(int) $skill['id']]) ? (int) $_POST['ratings'][(int) $skill['id']] : (int) $skill['rating']; ?>
-                      <div class="border rounded-4 p-3 p-md-4 <?= isset($errors[(int) $skill['id']]) ? 'border-danger' : '' ?>">
-                        <div class="d-flex justify-content-between align-items-start gap-3">
-                          <div>
+                      <div class="skillmap-skill-card <?= isset($errors[(int) $skill['id']]) ? 'border-danger' : '' ?>" data-search-item data-search-text="<?= htmlspecialchars($skill['name'] . ' ' . $skill['category'] . ' ' . $skill['description'] . ' difficulty ' . $skill['difficulty'], ENT_QUOTES, 'UTF-8') ?>">
+                        <div class="skillmap-skill-card-top">
+                          <div class="min-w-0">
                             <div class="fw-bold"><?= htmlspecialchars($skill['name'], ENT_QUOTES, 'UTF-8') ?></div>
                             <div class="text-muted small"><?= htmlspecialchars($skill['description'], ENT_QUOTES, 'UTF-8') ?></div>
                           </div>
                           <?= skillmap_rating_badge($ratingValue) ?>
                         </div>
-                        <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
+                        <div class="skillmap-rating-row mt-3">
                           <?= skillmap_star_rating($ratingValue) ?>
                           <input type="hidden" class="skill-rating-value" name="ratings[<?= (int) $skill['id'] ?>]" value="<?= $ratingValue ?>">
-                          <span class="small text-muted">Difficulty <?= (int) $skill['difficulty'] ?>/5</span>
+                          <span class="skillmap-difficulty">Difficulty <?= (int) $skill['difficulty'] ?>/5</span>
                         </div>
                         <label class="form-label small text-muted mt-3">Notes</label>
                         <textarea name="notes[<?= (int) $skill['id'] ?>]" class="form-control" rows="2"><?= htmlspecialchars((string) ($_POST['notes'][(int) $skill['id']] ?? $skill['notes']), ENT_QUOTES, 'UTF-8') ?></textarea>
@@ -184,25 +216,39 @@ $activeCategory = array_key_first($skillsByCategory);
                   </div>
                 </div>
               <?php endforeach; ?>
+              <div class="alert alert-light border mb-0 d-none" data-search-empty>No matching skills found.</div>
             </div>
           </div>
         </div>
 
         <div class="col-lg-4">
-          <div class="card">
-            <div class="card-body p-4">
-              <h2 class="h5 fw-bold mb-3">Assessment Status</h2>
-              <?php
-                $ratedCount = count(array_filter($skillRows, static fn(array $skill): bool => (int) $skill['rating'] > 0));
-                $totalCount = count($skillRows);
-                $completion = $totalCount > 0 ? (int) round(($ratedCount / $totalCount) * 100) : 0;
-              ?>
+          <div class="skillmap-right-rail d-grid gap-4">
+            <div class="card">
+              <div class="card-body p-4">
+                <h2 class="h5 fw-bold mb-3">Assessment Status</h2>
               <?= skillmap_progress_ring($completion) ?>
               <div class="small text-muted text-center mt-3"><?= $ratedCount ?> of <?= $totalCount ?> active skills rated</div>
-              <hr>
-              <div class="d-grid gap-2">
-                <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/profile.php">Back to Profile</a>
-                <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/analyse.php">Choose Target Role</a>
+                <div class="d-grid gap-2 mt-4">
+                  <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/profile.php"><i class="bi bi-person me-1"></i>Profile</a>
+                  <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/analyse.php"><i class="bi bi-search me-1"></i>Choose Target Role</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-body p-4">
+                <h2 class="h6 fw-bold mb-3">Category Progress</h2>
+                <div class="d-grid gap-3">
+                  <?php foreach ($categoryProgress as $category => $progress): ?>
+                    <div>
+                      <div class="d-flex justify-content-between align-items-center small mb-1">
+                        <span><i class="bi <?= htmlspecialchars($progress['icon'], ENT_QUOTES, 'UTF-8') ?> me-1 text-primary"></i><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="text-muted"><?= (int) $progress['rated'] ?>/<?= (int) $progress['total'] ?></span>
+                      </div>
+                      <div class="progress"><div class="progress-bar" style="width: <?= (int) $progress['percent'] ?>%"></div></div>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
               </div>
             </div>
           </div>

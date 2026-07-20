@@ -163,20 +163,26 @@ $skills = $pdo->query(
       </div>
 
       <div class="col-xl-8">
-        <div class="card">
+        <div class="card" data-search-scope>
+          <div class="card-body p-3 p-lg-4">
+            <div class="skillmap-search">
+              <i class="bi bi-search"></i>
+              <input class="form-control" type="search" placeholder="Search skills, category, status, or description" data-search-input>
+            </div>
+          </div>
           <div class="table-responsive">
             <table class="table align-middle mb-0" id="skillLibraryTable">
-              <thead><tr><th>#</th><th>Skill</th><th>Category</th><th>Difficulty</th><th>Usage</th><th>Status</th><th>Actions</th></tr></thead>
+              <thead><tr><th>#</th><th>Skill</th><th>Category</th><th>Difficulty</th><th>Usage</th><th>Status</th><th class="skillmap-actions-col">Actions</th></tr></thead>
               <tbody>
                 <?php foreach ($skills as $index => $skill): ?>
-                  <tr data-filter-value="<?= htmlspecialchars(strtolower($skill['category']), ENT_QUOTES, 'UTF-8') ?>">
+                  <tr data-filter-value="<?= htmlspecialchars(strtolower($skill['category']), ENT_QUOTES, 'UTF-8') ?>" data-search-item data-search-text="<?= htmlspecialchars($skill['name'] . ' ' . $skill['category'] . ' ' . $skill['status'] . ' ' . $skill['description'], ENT_QUOTES, 'UTF-8') ?>">
                     <td><?= $index + 1 ?></td>
                     <td><div class="fw-semibold"><?= htmlspecialchars($skill['name'], ENT_QUOTES, 'UTF-8') ?></div><div class="small text-muted"><?= htmlspecialchars($skill['description'], ENT_QUOTES, 'UTF-8') ?></div></td>
                     <td><span class="badge badge-soft rounded-pill"><i class="bi <?= htmlspecialchars($skill['icon'], ENT_QUOTES, 'UTF-8') ?> me-1"></i><?= htmlspecialchars($skill['category'], ENT_QUOTES, 'UTF-8') ?></span></td>
                     <td><?= str_repeat('<i class="bi bi-star-fill text-warning"></i>', (int) $skill['difficulty']) ?></td>
                     <td><span class="badge text-bg-light border"><?= (int) $skill['role_count'] ?> roles</span> <span class="badge text-bg-light border"><?= (int) $skill['rating_count'] ?> ratings</span></td>
                     <td><?= skillmap_status_badge($skill['status']) ?></td>
-                    <td>
+                    <td class="skillmap-actions-col">
                       <div class="d-flex gap-2">
                         <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/skill_library.php?edit=<?= (int) $skill['id'] ?>"><i class="bi bi-pencil"></i></a>
                         <form method="post">
@@ -189,6 +195,7 @@ $skills = $pdo->query(
                   </tr>
                 <?php endforeach; ?>
                 <?php if ($skills === []): ?><tr><td colspan="7" class="text-center text-muted py-4">No skills found.</td></tr><?php endif; ?>
+                <tr class="d-none" data-search-empty><td colspan="7" class="text-center text-muted py-4">No matching skills found.</td></tr>
               </tbody>
             </table>
           </div>
