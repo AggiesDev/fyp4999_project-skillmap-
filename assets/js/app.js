@@ -77,6 +77,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  const recipientModeInputs = document.querySelectorAll('[data-recipient-mode]');
+  if (recipientModeInputs.length > 0) {
+    const recipientRoleSelect = document.querySelector('[data-recipient-role-select]');
+    const recipientUserSelect = document.querySelector('[data-recipient-user-select]');
+    const syncRecipientMode = () => {
+      const checkedMode = document.querySelector('[data-recipient-mode]:checked')?.value || 'role';
+      if (recipientRoleSelect) {
+        recipientRoleSelect.disabled = checkedMode !== 'role';
+      }
+      if (recipientUserSelect) {
+        recipientUserSelect.disabled = checkedMode !== 'user';
+      }
+    };
+
+    recipientModeInputs.forEach((input) => {
+      input.addEventListener('change', syncRecipientMode);
+    });
+    syncRecipientMode();
+  }
+
   document.querySelectorAll('[data-toggle-panel]').forEach((button) => {
     button.addEventListener('click', () => {
       const targetId = button.getAttribute('data-toggle-panel');

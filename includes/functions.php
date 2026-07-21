@@ -654,7 +654,7 @@ function skillmap_fetch_notification_items(int $userId, string $role, int $limit
          FROM notifications n
          LEFT JOIN users sender ON sender.id = n.sender_user_id
          WHERE n.recipient_user_id = ?
-            OR n.recipient_role IN (?, "all")
+            OR (n.recipient_user_id IS NULL AND n.recipient_role IN (?, "all"))
          ORDER BY n.created_at DESC
          LIMIT ' . (int) $limit,
         'is',
@@ -668,13 +668,34 @@ function skillmap_fetch_notification_items(int $userId, string $role, int $limit
     return $items;
 }
 
+function skillmap_fetch_sent_notification_items(int $senderUserId, int $limit = 20): array
+{
+    if ($senderUserId <= 0) {
+        return [];
+    }
+
+    return skillmap_fetch_all(
+        'SELECT n.id, n.notification_type, n.title, n.body, n.created_at,
+                CASE WHEN n.recipient_user_id IS NOT NULL THEN COALESCE(recipient.name, "Selected user")
+                     ELSE UPPER(n.recipient_role) END AS audience,
+                COALESCE(recipient.role, n.recipient_role) AS audience_role
+         FROM notifications n
+         LEFT JOIN users recipient ON recipient.id = n.recipient_user_id
+         WHERE n.sender_user_id = ?
+         ORDER BY n.created_at DESC
+         LIMIT ' . (int) $limit,
+        'i',
+        [$senderUserId]
+    );
+}
+
 function skillmap_notification_unread_count(int $userId, string $role): int
 {
     $row = skillmap_fetch_one(
         'SELECT COUNT(*) AS unread_count
          FROM notifications n
          WHERE n.is_read = 0
-           AND (n.recipient_user_id = ? OR n.recipient_role IN (?, "all"))',
+           AND (n.recipient_user_id = ? OR (n.recipient_user_id IS NULL AND n.recipient_role IN (?, "all")))',
         'is',
         [$userId, $role]
     );
@@ -687,7 +708,7 @@ function skillmap_mark_notification_read(int $notificationId, int $userId, strin
     $updated = skillmap_db_query(
         'UPDATE notifications
          SET is_read = 1, read_at = NOW()
-         WHERE id = ? AND (recipient_user_id = ? OR recipient_role IN (?, "all"))',
+         WHERE id = ? AND (recipient_user_id = ? OR (recipient_user_id IS NULL AND recipient_role IN (?, "all")))',
         'iis',
         [$notificationId, $userId, $role]
     );
@@ -710,12 +731,22 @@ function skillmap_create_notification(array $payload): bool
     }
 
     if ($recipientUserId !== null) {
+        $recipientRole = in_array($recipientRole, ['admin', 'student', 'lecturer', 'staff'], true) ? $recipientRole : '';
+        if ($recipientRole === '') {
+            $recipient = skillmap_fetch_one('SELECT role FROM users WHERE id = ? LIMIT 1', 'i', [$recipientUserId]);
+            $recipientRole = (string) ($recipient['role'] ?? '');
+        }
+
+        if (!in_array($recipientRole, ['admin', 'student', 'lecturer', 'staff'], true)) {
+            return false;
+        }
+
         $senderIdValue = $senderUserId > 0 ? $senderUserId : 0;
-        $senderRoleValue = $senderRole !== '' ? $senderRole : 'system';
+        $senderRoleValue = in_array($senderRole, ['admin', 'lecturer', 'staff'], true) ? $senderRole : '';
         return skillmap_db_query(
-            'INSERT INTO notifications (sender_user_id, sender_role, recipient_user_id, recipient_role, notification_type, title, body) VALUES (NULLIF(?, 0), ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO notifications (sender_user_id, sender_role, recipient_user_id, recipient_role, notification_type, title, body) VALUES (NULLIF(?, 0), NULLIF(?, ""), ?, ?, ?, ?, ?)',
             'isissss',
-            [$senderIdValue, $senderRoleValue, $recipientUserId, 'all', $type, $title, $body]
+            [$senderIdValue, $senderRoleValue, $recipientUserId, $recipientRole, $type, $title, $body]
         ) === true;
     }
 
@@ -726,10 +757,10 @@ function skillmap_create_notification(array $payload): bool
     $recipientRole = in_array($recipientRole, ['admin', 'student', 'lecturer', 'staff', 'all'], true) ? $recipientRole : 'all';
 
     $senderIdValue = $senderUserId > 0 ? $senderUserId : 0;
-    $senderRoleValue = $senderRole !== '' ? $senderRole : 'system';
+    $senderRoleValue = in_array($senderRole, ['admin', 'lecturer', 'staff'], true) ? $senderRole : '';
 
     $insert = skillmap_db_query(
-        'INSERT INTO notifications (sender_user_id, sender_role, recipient_role, notification_type, title, body) VALUES (NULLIF(?, 0), ?, ?, ?, ?, ?)',
+        'INSERT INTO notifications (sender_user_id, sender_role, recipient_role, notification_type, title, body) VALUES (NULLIF(?, 0), NULLIF(?, ""), ?, ?, ?, ?)',
         'isssss',
         [$senderIdValue, $senderRoleValue, $recipientRole, $type, $title, $body]
     );
