@@ -107,4 +107,4 @@ Specific-user notifications are delivered only to the selected user. Role notifi
 
 ## License
 
-Developed by Aggies for the Skill Map FYP project.
+Developed by AggiesDEV for the Skill Map FYP project.
