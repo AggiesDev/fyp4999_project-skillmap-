@@ -1268,6 +1268,11 @@ body:has(.skillmap-admin-sidebar) .btn {
   border-radius: 1rem;
 }
 
+.skillmap-permission-scroll {
+  max-height: 520px;
+  overflow: auto;
+}
+
 .badge-soft {
   background: #eff6ff;
   color: var(--sm-primary);

@@ -50,30 +50,65 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if ($action === 'save_user') {
         $userId = (int) ($_POST['user_id'] ?? 0);
         $name = trim((string) ($_POST['name'] ?? ''));
-        $username = trim((string) ($_POST['username'] ?? ''));
-        $email = trim((string) ($_POST['email'] ?? ''));
+        $username = strtolower(trim((string) ($_POST['username'] ?? '')));
+        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
         $programmeChoice = trim((string) ($_POST['programme'] ?? ''));
         $programmeOther = trim((string) ($_POST['programme_other'] ?? ''));
+        $department = trim((string) ($_POST['department'] ?? ''));
         $yearLevel = trim((string) ($_POST['year_level'] ?? ''));
         $roleChoice = trim((string) ($_POST['role'] ?? 'student'));
         $roleOther = strtolower(trim((string) ($_POST['role_other'] ?? '')));
         $status = (string) ($_POST['status'] ?? 'Active');
         $password = (string) ($_POST['password'] ?? '');
+        $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
         $gender = skillmap_normalize_gender((string) ($_POST['gender'] ?? 'male'));
 
         $programme = $programmeChoice === '__other' ? $programmeOther : $programmeChoice;
         $role = $roleChoice === '__other' ? $roleOther : $roleChoice;
         $status = in_array($status, ['Active', 'Inactive'], true) ? $status : 'Active';
         $profileIcon = skillmap_sanitize_profile_icon((string) ($_POST['profile_icon'] ?? ''), $gender, $role);
+        $isStudentRole = $role === 'student';
 
-        if ($name === '' || $username === '' || $email === '' || $programme === '' || $yearLevel === '' || $role === '') {
-            $error = 'Name, username, email, programme, year level, and role are required.';
+        if ($isStudentRole) {
+            $programme = $programme !== '' ? $programme : 'Information Systems';
+            $yearLevel = $yearLevel !== '' ? $yearLevel : 'Year 1';
+        } else {
+            $programme = $department !== '' ? $department : '';
+            $yearLevel = 'N/A';
+        }
+
+        if ($name === '') {
+            $error = 'Full name is required.';
+        } elseif ($username === '' || !preg_match('/^[a-z0-9._-]{3,40}$/', $username)) {
+            $error = 'Username must be 3-40 characters and use only letters, numbers, dots, underscores, or hyphens.';
+        } elseif ($role === '') {
+            $error = 'Role is required.';
+        } elseif ($programme === '') {
+            $error = $isStudentRole ? 'Programme is required.' : 'Department is required.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Please enter a valid email address.';
         } elseif ($userId === 0 && $password === '') {
             $error = 'Password is required when creating a user.';
+        } elseif ($password !== '' && (strlen($password) < 8 || !preg_match('/[A-Za-z]/', $password) || !preg_match('/\d/', $password))) {
+            $error = 'Password must be at least 8 characters and include letters and numbers.';
+        } elseif ($password !== '' && $confirmPassword === '') {
+            $error = 'Please confirm the password.';
+        } elseif ($password !== '' && $password !== $confirmPassword) {
+            $error = 'Password confirmation does not match.';
         } else {
             try {
+                $duplicateEmail = $pdo->prepare('SELECT id FROM users WHERE email = :email AND id <> :id LIMIT 1');
+                $duplicateEmail->execute(['email' => $email, 'id' => $userId]);
+                $duplicateUsername = $pdo->prepare('SELECT id FROM users WHERE username = :username AND id <> :id LIMIT 1');
+                $duplicateUsername->execute(['username' => $username, 'id' => $userId]);
+
+                if ($duplicateEmail->fetchColumn()) {
+                    throw new RuntimeException('This email address is already registered.');
+                }
+                if ($duplicateUsername->fetchColumn()) {
+                    throw new RuntimeException('This username is already taken.');
+                }
+
                 if ($roleChoice === '__other') {
                     $accessRole = $pdo->prepare('INSERT IGNORE INTO access_roles (name, description) VALUES (:name, :description)');
                     $accessRole->execute([
@@ -131,6 +166,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     ]);
                     $message = 'User created successfully.';
                 }
+            } catch (RuntimeException $exception) {
+                $error = $exception->getMessage();
             } catch (PDOException $exception) {
                 $error = $exception->getCode() === '23000'
                     ? 'Email or username already exists.'
@@ -369,20 +406,20 @@ $formOptions = admin_user_form_options($pdo);
                 <?php admin_render_profile_icon_choices($selectedIcon); ?>
               </div>
               <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-6" data-admin-student-field-wrap>
                   <label class="form-label">Programme</label>
                   <?php $selectedProgramme = (string) ($editUser['programme'] ?? ($formOptions['programmes'][0] ?? 'Information Systems')); ?>
-                  <select name="programme" class="form-select" data-other-select="adminProgrammeOtherWrap" required>
+                  <select name="programme" class="form-select" data-other-select="adminProgrammeOtherWrap" data-admin-student-field required>
                     <?php foreach ($formOptions['programmes'] as $programme): ?>
                       <option value="<?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?>" <?= $selectedProgramme === $programme ? 'selected' : '' ?>><?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                     <option value="__other">Other</option>
                   </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" data-admin-student-field-wrap>
                   <label class="form-label">Year Level</label>
                   <?php $selectedYear = (string) ($editUser['year_level'] ?? 'Year 1'); ?>
-                  <select name="year_level" class="form-select" required>
+                  <select name="year_level" class="form-select" data-admin-student-field required>
                     <?php foreach ($formOptions['years'] as $year): ?>
                       <option value="<?= htmlspecialchars($year, ENT_QUOTES, 'UTF-8') ?>" <?= $selectedYear === $year ? 'selected' : '' ?>><?= htmlspecialchars($year, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
@@ -393,11 +430,15 @@ $formOptions = admin_user_form_options($pdo);
                 <label class="form-label">Programme Name</label>
                 <input type="text" name="programme_other" class="form-control" placeholder="Write programme name">
               </div>
+              <div id="adminDepartmentWrap" class="d-none">
+                <label class="form-label">Department</label>
+                <input type="text" name="department" class="form-control" value="<?= htmlspecialchars($selectedProgramme, ENT_QUOTES, 'UTF-8') ?>" placeholder="Academic department or office">
+              </div>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Role</label>
                   <?php $selectedRole = (string) ($editUser['role'] ?? 'student'); ?>
-                  <select name="role" class="form-select" data-other-select="adminRoleOtherWrap" required>
+                  <select name="role" class="form-select" data-other-select="adminRoleOtherWrap" data-admin-user-role required>
                     <?php foreach ($formOptions['roles'] as $role): ?>
                       <option value="<?= htmlspecialchars($role, ENT_QUOTES, 'UTF-8') ?>" <?= $selectedRole === $role ? 'selected' : '' ?>><?= htmlspecialchars(ucwords(str_replace('_', ' ', $role)), ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
@@ -411,7 +452,15 @@ $formOptions = admin_user_form_options($pdo);
                 <input type="text" name="role_other" class="form-control" placeholder="Write role name">
                 <div class="form-text">A new access role will be created automatically.</div>
               </div>
-              <div><label class="form-label"><?= $editUser ? 'New Password' : 'Password' ?></label><input type="password" name="password" class="form-control" <?= $editUser ? '' : 'required' ?>><div class="form-text"><?= $editUser ? 'Leave blank to keep current password.' : 'Required for new users.' ?></div></div>
+              <div>
+                <label class="form-label"><?= $editUser ? 'New Password' : 'Password' ?></label>
+                <input type="password" name="password" class="form-control" <?= $editUser ? '' : 'required' ?>>
+                <div class="form-text"><?= $editUser ? 'Leave blank to keep current password.' : 'Required for new users.' ?> Use at least 8 characters with letters and numbers.</div>
+              </div>
+              <div>
+                <label class="form-label">Confirm Password</label>
+                <input type="password" name="confirm_password" class="form-control" <?= $editUser ? '' : 'required' ?>>
+              </div>
             </div>
           </div>
           <div class="card-footer bg-white border-0 p-4 pt-0 d-flex gap-2">
@@ -484,6 +533,50 @@ $formOptions = admin_user_form_options($pdo);
       select.addEventListener('change', sync);
       sync();
     });
+
+    const adminRoleSelect = document.querySelector('[data-admin-user-role]');
+    const adminStudentFields = document.querySelectorAll('[data-admin-student-field]');
+    const adminStudentWraps = document.querySelectorAll('[data-admin-student-field-wrap]');
+    const adminDepartmentWrap = document.getElementById('adminDepartmentWrap');
+    const adminDepartmentInput = adminDepartmentWrap?.querySelector('input[name="department"]');
+    const adminProgrammeSelect = document.querySelector('select[name="programme"]');
+    const adminProgrammeOtherWrap = document.getElementById('adminProgrammeOtherWrap');
+
+    const syncAdminUserRole = () => {
+      const role = adminRoleSelect?.value || 'student';
+      const isStudent = role === 'student';
+
+      adminStudentWraps.forEach((wrap) => {
+        wrap.classList.toggle('d-none', !isStudent);
+      });
+      adminStudentFields.forEach((field) => {
+        field.disabled = !isStudent;
+        field.required = isStudent;
+      });
+
+      if (adminDepartmentWrap) {
+        adminDepartmentWrap.classList.toggle('d-none', isStudent);
+      }
+      if (adminDepartmentInput) {
+        adminDepartmentInput.required = !isStudent;
+      }
+
+      if (!isStudent && adminProgrammeOtherWrap) {
+        adminProgrammeOtherWrap.classList.add('d-none');
+        adminProgrammeOtherWrap.querySelectorAll('input').forEach((input) => {
+          input.required = false;
+        });
+      } else if (adminProgrammeOtherWrap && adminProgrammeSelect?.value === '__other') {
+        adminProgrammeOtherWrap.classList.remove('d-none');
+        adminProgrammeOtherWrap.querySelectorAll('input').forEach((input) => {
+          input.required = true;
+        });
+      }
+    };
+
+    adminRoleSelect?.addEventListener('change', syncAdminUserRole);
+    adminProgrammeSelect?.addEventListener('change', syncAdminUserRole);
+    syncAdminUserRole();
   </script>
 </body>
 </html>

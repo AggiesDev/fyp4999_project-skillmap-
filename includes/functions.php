@@ -87,6 +87,16 @@ function skillmap_bootstrap_database(): void
         CONSTRAINT fk_access_role_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
     )');
 
+    skillmap_db_query('CREATE TABLE IF NOT EXISTS user_permissions (
+        user_id INT NOT NULL,
+        permission_id INT NOT NULL,
+        enabled TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, permission_id),
+        CONSTRAINT fk_user_permissions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        CONSTRAINT fk_user_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+    )');
+
     skillmap_db_query('CREATE TABLE IF NOT EXISTS notifications (
         id INT AUTO_INCREMENT PRIMARY KEY,
         sender_user_id INT NULL,
@@ -509,28 +519,67 @@ function skillmap_login(string $loginKey, string $password): ?array
 
 function skillmap_register(array $payload): ?array
 {
+    unset($_SESSION['skillmap_registration_error']);
+
     $name = trim((string) ($payload['name'] ?? ''));
-    $email = trim((string) ($payload['email'] ?? ''));
+    $email = strtolower(trim((string) ($payload['email'] ?? '')));
     $password = (string) ($payload['password'] ?? '');
+    $confirmPassword = (string) ($payload['confirm_password'] ?? '');
     $programmeChoice = trim((string) ($payload['programme'] ?? ''));
     $programmeOther = trim((string) ($payload['programme_other'] ?? ''));
+    $department = trim((string) ($payload['department'] ?? ''));
     $year = trim((string) ($payload['year'] ?? ''));
     $roleChoice = trim((string) ($payload['role'] ?? 'student'));
     $roleOther = trim((string) ($payload['role_other'] ?? ''));
-    $username = trim((string) ($payload['username'] ?? ''));
+    $username = strtolower(trim((string) ($payload['username'] ?? '')));
     $gender = skillmap_normalize_gender((string) ($payload['gender'] ?? 'male'));
     $profileIcon = skillmap_sanitize_profile_icon((string) ($payload['profile_icon'] ?? ''), $gender, $roleChoice);
 
+    $allowedSignupRoles = ['student', 'lecturer', 'staff'];
     $programme = $programmeChoice === '__other' ? $programmeOther : $programmeChoice;
     $requestedRole = $roleChoice === '__other' ? $roleOther : $roleChoice;
-    $systemRole = in_array($roleChoice, ['student', 'lecturer'], true) ? $roleChoice : 'student';
+    $systemRole = in_array($roleChoice, $allowedSignupRoles, true) ? $roleChoice : 'student';
     $needsApproval = $programmeChoice === '__other' || $roleChoice === '__other';
 
-    if ($programme === '') {
-        $programme = 'Information Systems';
+    if ($systemRole === 'student') {
+        if ($programme === '') {
+            $programme = 'Information Systems';
+        }
+        if ($year === '') {
+            $year = 'Year 1';
+        }
+    } else {
+        $programme = $department !== '' ? $department : 'General Department';
+        $year = 'N/A';
     }
-    if ($year === '') {
-        $year = 'Year 1';
+
+    if ($name === '') {
+        $_SESSION['skillmap_registration_error'] = 'Full name is required.';
+        return null;
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['skillmap_registration_error'] = 'Please enter a valid email address.';
+        return null;
+    }
+    if ($username === '' || !preg_match('/^[a-z0-9._-]{3,40}$/', $username)) {
+        $_SESSION['skillmap_registration_error'] = 'Username must be 3-40 characters and use only letters, numbers, dots, underscores, or hyphens.';
+        return null;
+    }
+    if (strlen($password) < 8 || !preg_match('/[A-Za-z]/', $password) || !preg_match('/\d/', $password)) {
+        $_SESSION['skillmap_registration_error'] = 'Password must be at least 8 characters and include letters and numbers.';
+        return null;
+    }
+    if ($confirmPassword !== '' && $password !== $confirmPassword) {
+        $_SESSION['skillmap_registration_error'] = 'Password confirmation does not match.';
+        return null;
+    }
+    if (skillmap_fetch_one('SELECT id FROM users WHERE email = ? LIMIT 1', 's', [$email]) !== null) {
+        $_SESSION['skillmap_registration_error'] = 'This email address is already registered.';
+        return null;
+    }
+    if (skillmap_fetch_one('SELECT id FROM users WHERE username = ? LIMIT 1', 's', [$username]) !== null) {
+        $_SESSION['skillmap_registration_error'] = 'This username is already taken.';
+        return null;
     }
 
     return register($name, $username, $email, $password, $programme, $year, $systemRole, $needsApproval ? 'Inactive' : 'Active', [
@@ -550,9 +599,9 @@ function skillmap_registration_options(): array
 
     $years = array_values(array_unique(array_merge(['Year 1', 'Year 2', 'Year 3', 'Year 4'], $years)));
 
-    $roles = array_column(skillmap_fetch_all('SELECT name AS value FROM access_roles WHERE name IN ("student", "lecturer") ORDER BY FIELD(name, "student", "lecturer")'), 'value');
+    $roles = array_column(skillmap_fetch_all('SELECT name AS value FROM access_roles WHERE name IN ("student", "lecturer", "staff") ORDER BY FIELD(name, "student", "lecturer", "staff")'), 'value');
     if ($roles === []) {
-        $roles = ['student', 'lecturer'];
+        $roles = ['student', 'lecturer', 'staff'];
     }
 
     return [

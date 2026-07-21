@@ -280,6 +280,21 @@ function has_permission(string $permissionName): bool
     }
 
     global $pdo;
+    $userPermissionStmt = $pdo->prepare(
+        'SELECT 1
+         FROM user_permissions up
+         INNER JOIN permissions p ON p.id = up.permission_id
+         WHERE up.user_id = :user_id AND up.enabled = 1 AND p.name = :permission
+         LIMIT 1'
+    );
+    $userPermissionStmt->execute([
+        'user_id' => (int) $user['id'],
+        'permission' => $permissionName,
+    ]);
+    if ($userPermissionStmt->fetchColumn()) {
+        return true;
+    }
+
     $stmt = $pdo->prepare(
         'SELECT 1
          FROM access_roles ar

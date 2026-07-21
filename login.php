@@ -24,7 +24,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             }
         }
         if ($message === '') {
-            $error = 'Please complete all registration fields, or use a unique email and username.';
+            $error = (string) ($_SESSION['skillmap_registration_error'] ?? 'Please complete all registration fields, or use a unique email and username.');
+            unset($_SESSION['skillmap_registration_error']);
             $activeTab = 'register';
         }
     } elseif (isset($_POST['login_submit'])) {
@@ -124,7 +125,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
               <input type="hidden" name="tab" value="login">
               <div>
                 <label class="form-label">Email Address or Username</label>
-                <input type="text" name="email" class="form-control form-control-lg" placeholder="student@utm.my or demostudent" required>
+                <input type="text" name="email" class="form-control form-control-lg" placeholder="student@gmail.com or demostudent" required>
               </div>
               <div>
                 <label class="form-label">Password</label>
@@ -143,6 +144,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 <div>admin@gmail.com / admin@123</div>
                 <div>lecturer@gmail.com / lecturer@123</div>
                 <div>student@gmail.com / student@123</div>
+                <div>demostaff@gmail.com / staff@123</div>
               </div>
             </form>
           </div>
@@ -199,7 +201,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
               <div class="skillmap-form-grid">
                 <div>
                   <label class="form-label">Programme</label>
-                  <select name="programme" class="form-select" data-other-select="programmeOtherWrap" required>
+                  <select name="programme" class="form-select" data-other-select="programmeOtherWrap" data-student-field required>
                     <?php foreach ($registrationOptions['programmes'] as $programme): ?>
                       <option value="<?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
@@ -208,7 +210,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 </div>
                 <div>
                   <label class="form-label">Year</label>
-                  <select name="year" class="form-select" required>
+                  <select name="year" class="form-select" data-student-field required>
                     <?php foreach ($registrationOptions['years'] as $year): ?>
                       <option value="<?= htmlspecialchars($year, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($year, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
@@ -220,11 +222,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 <input type="text" name="programme_other" class="form-control" placeholder="Write your programme name">
                 <div class="form-text">New programmes require admin approval before the account can be used.</div>
               </div>
+              <div id="departmentWrap" class="d-none">
+                <label class="form-label">Department</label>
+                <input type="text" name="department" class="form-control" placeholder="Academic department or office">
+              </div>
 
               <div class="skillmap-form-grid">
                 <div>
                   <label class="form-label">Role</label>
-                  <select name="role" class="form-select" data-other-select="roleOtherWrap" required>
+                  <select name="role" class="form-select" data-other-select="roleOtherWrap" data-register-role required>
                     <?php foreach ($registrationOptions['roles'] as $role): ?>
                       <option value="<?= htmlspecialchars($role, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(ucfirst($role), ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
@@ -243,6 +249,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 <label class="form-label">Role Name</label>
                 <input type="text" name="role_other" class="form-control" placeholder="Write your requested role">
                 <div class="form-text">New roles require admin approval before the account can be used.</div>
+              </div>
+
+              <div>
+                <label class="form-label">Confirm Password</label>
+                <div class="input-group">
+                  <input type="password" name="confirm_password" id="registerConfirmPassword" class="form-control" required>
+                  <button class="btn btn-outline-secondary" type="button" data-toggle-password="registerConfirmPassword"><i class="bi bi-eye-slash"></i></button>
+                </div>
+                <div class="form-text">Use at least 8 characters with letters and numbers.</div>
               </div>
 
               <button type="submit" name="register_submit" class="btn btn-primary btn-lg w-100">Create Account</button>
@@ -271,6 +286,41 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
       select.addEventListener('change', sync);
       sync();
     });
+
+    const roleSelect = document.querySelector('[data-register-role]');
+    const studentFields = document.querySelectorAll('[data-student-field]');
+    const departmentWrap = document.getElementById('departmentWrap');
+    const departmentInput = departmentWrap?.querySelector('input[name="department"]');
+    const programmeOtherWrap = document.getElementById('programmeOtherWrap');
+    const programmeSelect = document.querySelector('select[name="programme"]');
+    const syncRegisterRole = () => {
+      const role = roleSelect?.value || 'student';
+      const isStudent = role === 'student' || role === '__other';
+      studentFields.forEach((field) => {
+        field.disabled = !isStudent;
+        field.required = isStudent;
+        field.closest('.skillmap-form-grid > div, div')?.classList.toggle('d-none', !isStudent);
+      });
+      if (departmentWrap) {
+        departmentWrap.classList.toggle('d-none', isStudent);
+      }
+      if (departmentInput) {
+        departmentInput.required = !isStudent;
+      }
+      if (!isStudent && programmeOtherWrap) {
+        programmeOtherWrap.classList.add('d-none');
+        programmeOtherWrap.querySelectorAll('input').forEach((input) => {
+          input.required = false;
+        });
+      } else if (programmeOtherWrap && programmeSelect?.value === '__other') {
+        programmeOtherWrap.classList.remove('d-none');
+        programmeOtherWrap.querySelectorAll('input').forEach((input) => {
+          input.required = true;
+        });
+      }
+    };
+    roleSelect?.addEventListener('change', syncRegisterRole);
+    syncRegisterRole();
   </script>
 </body>
 </html>

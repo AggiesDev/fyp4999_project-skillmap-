@@ -5,6 +5,8 @@ require_once __DIR__ . '/../includes/auth_check.php';
 skillmap_require_permission('manage_permissions');
 $activePage = 'permissions';
 $message = '';
+$selectedUserRole = (string) ($_POST['selected_user_role'] ?? $_GET['role'] ?? 'student');
+$selectedUserId = (int) ($_POST['selected_user_id'] ?? $_GET['user_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_role'])) {
@@ -44,10 +46,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $message = 'Permissions updated successfully.';
     }
+
+    if (isset($_POST['save_user_permissions'])) {
+        $selectedUserId = (int) ($_POST['selected_user_id'] ?? 0);
+        $submittedPermissions = is_array($_POST['user_permissions'] ?? null) ? $_POST['user_permissions'] : [];
+        $selectedUser = $selectedUserId > 0 ? skillmap_fetch_one('SELECT id, role FROM users WHERE id = ? LIMIT 1', 'i', [$selectedUserId]) : null;
+
+        if ($selectedUser !== null) {
+            skillmap_db_query('DELETE FROM user_permissions WHERE user_id = ?', 'i', [$selectedUserId]);
+            foreach (skillmap_access_permissions() as $permission) {
+                if (!in_array((string) $permission['id'], $submittedPermissions, true)) {
+                    continue;
+                }
+
+                skillmap_db_query(
+                    'INSERT INTO user_permissions (user_id, permission_id, enabled) VALUES (?, ?, 1)',
+                    'ii',
+                    [$selectedUserId, (int) $permission['id']]
+                );
+            }
+            $selectedUserRole = (string) $selectedUser['role'];
+            $message = 'User permissions updated successfully.';
+        } else {
+            $message = 'Please select a valid user before saving user permissions.';
+        }
+    }
 }
 
 $roles = skillmap_access_roles();
 $permissions = skillmap_access_permissions();
+$permissionUsers = skillmap_fetch_all(
+    'SELECT id, name, email, role FROM users WHERE status = "Active" ORDER BY role ASC, name ASC'
+);
+if ($selectedUserId <= 0 && $permissionUsers !== []) {
+    $selectedUserId = (int) $permissionUsers[0]['id'];
+    $selectedUserRole = (string) $permissionUsers[0]['role'];
+}
 $rolePermissionRows = skillmap_fetch_all(
     'SELECT ar.id AS role_id, p.id AS permission_id
      FROM access_role_permissions arp
@@ -58,6 +92,13 @@ $rolePermissionRows = skillmap_fetch_all(
 $permissionMap = [];
 foreach ($rolePermissionRows as $row) {
     $permissionMap[(int) $row['role_id']][(int) $row['permission_id']] = true;
+}
+$userPermissionRows = skillmap_fetch_all(
+    'SELECT user_id, permission_id FROM user_permissions WHERE enabled = 1'
+);
+$userPermissionMap = [];
+foreach ($userPermissionRows as $row) {
+    $userPermissionMap[(int) $row['user_id']][(int) $row['permission_id']] = true;
 }
 ?>
 <!doctype html>
@@ -111,7 +152,7 @@ foreach ($rolePermissionRows as $row) {
               <h2 class="h5 fw-bold mb-0">Current Roles</h2>
               <span class="badge text-bg-light border"><?= count($roles) ?> roles</span>
             </div>
-            <div class="table-responsive">
+            <div class="table-responsive skillmap-permission-scroll">
               <table class="table align-middle mb-0">
                 <thead>
                   <tr>
@@ -145,7 +186,7 @@ foreach ($rolePermissionRows as $row) {
           </div>
           <button class="btn btn-primary" type="submit" name="save_permissions">Save Permissions</button>
         </div>
-        <div class="table-responsive">
+        <div class="table-responsive skillmap-permission-scroll">
           <table class="table align-middle">
             <thead>
               <tr>
@@ -180,8 +221,108 @@ foreach ($rolePermissionRows as $row) {
         </div>
       </div>
     </form>
+
+    <form method="post" class="card shadow-sm border-0 mt-4">
+      <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+          <div>
+            <h2 class="h4 fw-bold mb-1">User Permission Override</h2>
+            <div class="text-muted">Select a role, choose one user, then grant special permissions for that user only</div>
+          </div>
+          <button class="btn btn-primary" type="submit" name="save_user_permissions">Accept Permissions</button>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <label class="form-label">Select Role</label>
+            <select class="form-select" name="selected_user_role" data-user-permission-role>
+              <?php foreach ($roles as $role): ?>
+                <option value="<?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?>" <?= $selectedUserRole === $role['name'] ? 'selected' : '' ?>><?= htmlspecialchars(ucfirst($role['name']), ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label">Select User</label>
+            <select class="form-select" name="selected_user_id" data-user-permission-user required>
+              <?php foreach ($permissionUsers as $permissionUser): ?>
+                <option
+                  value="<?= (int) $permissionUser['id'] ?>"
+                  data-role="<?= htmlspecialchars((string) $permissionUser['role'], ENT_QUOTES, 'UTF-8') ?>"
+                  <?= $selectedUserId === (int) $permissionUser['id'] ? 'selected' : '' ?>
+                >
+                  <?= htmlspecialchars($permissionUser['name'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($permissionUser['email'], ENT_QUOTES, 'UTF-8') ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <div class="table-responsive skillmap-permission-scroll">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th class="text-center">Grant to selected user</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($permissions as $permission): ?>
+                <tr>
+                  <td>
+                    <div class="fw-semibold"><?= htmlspecialchars($permission['name'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="small text-muted"><?= htmlspecialchars($permission['description'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
+                  </td>
+                  <td class="text-center">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      name="user_permissions[]"
+                      value="<?= (int) $permission['id'] ?>"
+                      data-user-permission-checkbox="<?= (int) $permission['id'] ?>"
+                      <?= isset($userPermissionMap[$selectedUserId][(int) $permission['id']]) ? 'checked' : '' ?>
+                    >
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </form>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>
+  <script>
+    const userPermissionMap = <?= json_encode($userPermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    const roleSelect = document.querySelector('[data-user-permission-role]');
+    const userSelect = document.querySelector('[data-user-permission-user]');
+    const permissionChecks = document.querySelectorAll('[data-user-permission-checkbox]');
+
+    const syncUserPermissionPicker = () => {
+      if (!roleSelect || !userSelect) return;
+      const selectedRole = roleSelect.value;
+      let firstVisible = null;
+
+      Array.from(userSelect.options).forEach((option) => {
+        const visible = option.getAttribute('data-role') === selectedRole;
+        option.hidden = !visible;
+        option.disabled = !visible;
+        if (visible && firstVisible === null) {
+          firstVisible = option;
+        }
+      });
+
+      if (userSelect.selectedOptions[0]?.disabled && firstVisible) {
+        userSelect.value = firstVisible.value;
+      }
+
+      const selectedPermissions = userPermissionMap[userSelect.value] || {};
+      permissionChecks.forEach((checkbox) => {
+        checkbox.checked = Boolean(selectedPermissions[checkbox.value]);
+      });
+    };
+
+    roleSelect?.addEventListener('change', syncUserPermissionPicker);
+    userSelect?.addEventListener('change', syncUserPermissionPicker);
+    syncUserPermissionPicker();
+  </script>
 </body>
 </html>
