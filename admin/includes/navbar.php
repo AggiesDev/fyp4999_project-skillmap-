@@ -63,6 +63,6 @@ $visibleNavItems = array_values(array_filter($navItems, static fn(array $item): 
       <i class="bi bi-box-arrow-right"></i>
       <span>Logout</span>
     </a>
-    <div class="skillmap-license mt-3">Develop by Aggies<br>&copy; <?= date('Y') ?> Skill Map License. All rights reserved.</div>
+    <div class="skillmap-license mt-3">Develop by AggiesDEV.<br>&copy; <?= date('Y') ?> Skill Map License. All Rights Reserved.</div>
   </div>
 </aside>

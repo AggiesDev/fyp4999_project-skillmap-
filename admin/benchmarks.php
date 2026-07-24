@@ -138,6 +138,7 @@ if (!$selectedRole && $roles !== []) {
     $selectedRoleId = (int) $selectedRole['id'];
 }
 $roleFormRole = isset($_GET['new']) ? null : $selectedRole;
+$showRoleForm = isset($_GET['edit_role']) || isset($_GET['new']);
 
 $benchmarks = [];
 if ($selectedRoleId > 0) {
@@ -189,7 +190,10 @@ $skills = $pdo->query(
       <div class="col-xl-3">
         <div class="card mb-4" data-search-scope>
           <div class="card-body p-3 p-lg-4">
-            <div class="fw-bold mb-3">Roles</div>
+            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+              <div class="fw-bold">Roles</div>
+              <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php?new=1">New Role</a>
+            </div>
             <div class="skillmap-search mb-3">
               <i class="bi bi-search"></i>
               <input class="form-control" type="search" placeholder="Search roles" data-search-input>
@@ -205,7 +209,7 @@ $skills = $pdo->query(
                     <div class="small opacity-75"><?= (int) $role['skills'] ?> skills · <?= (float) $role['avg_required'] ?> avg</div>
                   </a>
                   <div class="skillmap-role-list-actions">
-                    <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $role['id'] ?>" title="Edit role" aria-label="Edit <?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?>">
+                    <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $role['id'] ?>&edit_role=1" title="Edit role" aria-label="Edit <?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?>">
                       <i class="bi bi-pencil"></i>
                     </a>
                     <form method="post">
@@ -224,25 +228,27 @@ $skills = $pdo->query(
           </div>
         </div>
 
-        <form method="post" class="card">
-          <div class="card-body p-4">
-            <input type="hidden" name="action" value="save_role">
-            <input type="hidden" name="role_id" value="<?= (int) ($roleFormRole['id'] ?? 0) ?>">
-            <h2 class="h6 fw-bold mb-3"><?= $roleFormRole ? 'Edit Selected Role' : 'Add Role' ?></h2>
-            <div class="d-grid gap-3">
-              <div><label class="form-label">Role Name</label><input name="name" class="form-control" value="<?= htmlspecialchars((string) ($roleFormRole['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></div>
-              <div><label class="form-label">Type</label><select name="type" class="form-select"><option value="Career" <?= ($roleFormRole['type'] ?? '') === 'Career' ? 'selected' : '' ?>>Career</option><option value="Lead" <?= ($roleFormRole['type'] ?? '') === 'Lead' ? 'selected' : '' ?>>Lead</option></select></div>
-              <div><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3"><?= htmlspecialchars((string) ($roleFormRole['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea></div>
-            </div>
-          </div>
-          <div class="card-footer bg-white border-0 p-4 pt-0 d-flex flex-wrap gap-2">
-            <button class="btn btn-primary btn-sm" type="submit">Save Role</button>
-            <a class="btn btn-outline-secondary btn-sm" href="/fyp_skillmapsystem/admin/benchmarks.php?new=1">New</a>
-          </div>
-        </form>
       </div>
 
       <div class="col-xl-9">
+        <form method="post" class="card mb-4 <?= $showRoleForm ? '' : 'd-none' ?>" id="roleForm">
+          <div class="card-body p-4">
+            <input type="hidden" name="action" value="save_role">
+            <input type="hidden" name="role_id" value="<?= (int) ($roleFormRole['id'] ?? 0) ?>">
+            <h2 class="h5 fw-bold mb-3"><?= $roleFormRole ? 'Edit Selected Role' : 'New Role' ?></h2>
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label">Role Name</label><input name="name" class="form-control" value="<?= htmlspecialchars((string) ($roleFormRole['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required></div>
+              <div class="col-md-3"><label class="form-label">Type</label><select name="type" class="form-select"><option value="Career" <?= ($roleFormRole['type'] ?? '') === 'Career' ? 'selected' : '' ?>>Career</option><option value="Lead" <?= ($roleFormRole['type'] ?? '') === 'Lead' ? 'selected' : '' ?>>Lead</option></select></div>
+              <div class="col-md-5"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="2"><?= htmlspecialchars((string) ($roleFormRole['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea></div>
+            </div>
+          </div>
+          <div class="card-footer bg-white border-0 p-4 pt-0 d-flex flex-wrap gap-2">
+            <button class="btn btn-primary" type="submit">Save Role</button>
+            <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/benchmarks.php?new=1">New</a>
+            <?php if ($showRoleForm): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $selectedRoleId ?>">Cancel</a><?php endif; ?>
+          </div>
+        </form>
+
         <div class="card mb-4">
           <div class="card-body p-4">
             <h2 class="h5 fw-bold mb-3">Add Benchmark Skill</h2>
@@ -252,7 +258,15 @@ $skills = $pdo->query(
               <form method="post" class="row g-3 align-items-end">
                 <input type="hidden" name="action" value="save_benchmark">
                 <input type="hidden" name="role_id" value="<?= (int) $selectedRoleId ?>">
-                <div class="col-lg-5"><label class="form-label">Skill</label><select name="skill_id" class="form-select" required><?php foreach ($skills as $skill): ?><option value="<?= (int) $skill['id'] ?>"><?= htmlspecialchars($skill['category'] . ' - ' . $skill['name'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select></div>
+                <div class="col-lg-5">
+                  <label class="form-label">Skill</label>
+                  <?php if (count($skills) > 10): ?>
+                    <input type="search" class="form-control form-control-sm mb-2" placeholder="Search skills" data-select-search="benchmarkSkillSelect">
+                  <?php endif; ?>
+                  <select name="skill_id" id="benchmarkSkillSelect" class="form-select" required>
+                    <?php foreach ($skills as $skill): ?><option value="<?= (int) $skill['id'] ?>"><?= htmlspecialchars($skill['category'] . ' - ' . $skill['name'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?>
+                  </select>
+                </div>
                 <div class="col-lg-2"><label class="form-label">Required</label><select name="required_rating" class="form-select"><?php for ($i = 1; $i <= 5; $i++): ?><option value="<?= $i ?>"><?= $i ?>/5</option><?php endfor; ?></select></div>
                 <div class="col-lg-3"><label class="form-label">Priority</label><select name="priority" class="form-select"><option>Critical</option><option selected>Important</option><option>Optional</option></select></div>
                 <div class="col-lg-2"><button class="btn btn-success w-100" type="submit"><i class="bi bi-plus-lg me-1"></i>Add</button></div>
@@ -310,6 +324,7 @@ $skills = $pdo->query(
         </div>
       </div>
     </div>
+    <?php require __DIR__ . '/../includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>

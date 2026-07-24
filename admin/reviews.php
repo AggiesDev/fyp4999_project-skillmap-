@@ -229,11 +229,17 @@ $distributionValues = array_values($ratingCounts);
                   <div class="border rounded-4 p-3 p-md-4" data-search-item data-search-text="<?= htmlspecialchars($category . ' ' . implode(' ', array_column($group['items'], 'name')) . ' ' . implode(' ', array_column($group['items'], 'description')), ENT_QUOTES, 'UTF-8') ?>">
                     <?php $stats = $categoryStats[$category] ?? ['total' => 0, 'rated' => 0, 'score_sum' => 0]; ?>
                     <?php $categoryPct = (int) round(($stats['score_sum'] / max((int) $stats['total'] * 5, 1)) * 100); ?>
+                    <?php $categoryPanelId = 'reviewCategory' . md5((string) $category); ?>
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                       <div class="fw-semibold"><i class="bi <?= htmlspecialchars((string) ($group['icon'] ?? 'bi-stars'), ENT_QUOTES, 'UTF-8') ?> me-1 text-primary"></i><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></div>
-                      <span class="badge text-bg-light border"><?= (int) $stats['rated'] ?> / <?= (int) $stats['total'] ?> rated · <?= $categoryPct ?>%</span>
+                      <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="badge text-bg-light border"><?= (int) $stats['rated'] ?> / <?= (int) $stats['total'] ?> rated · <?= $categoryPct ?>%</span>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle-panel="<?= htmlspecialchars($categoryPanelId, ENT_QUOTES, 'UTF-8') ?>">
+                          <i class="bi bi-eye me-1"></i>Show/Hide
+                        </button>
+                      </div>
                     </div>
-                    <div class="d-grid gap-3">
+                    <div class="d-grid gap-3 d-none" id="<?= htmlspecialchars($categoryPanelId, ENT_QUOTES, 'UTF-8') ?>">
                       <?php foreach ($group['items'] as $skill): ?>
                         <div class="skillmap-review-skill">
                           <div class="flex-grow-1">
@@ -256,6 +262,7 @@ $distributionValues = array_values($ratingCounts);
         <?php endif; ?>
       </div>
     </div>
+    <?php require __DIR__ . '/../includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>

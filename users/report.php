@@ -174,6 +174,7 @@ $generatedDate = date('j M Y');
         </div>
       </div>
     <?php endif; ?>
+    <?php require __DIR__ . '/../includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>

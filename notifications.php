@@ -104,6 +104,7 @@ $navFile = in_array($userRole, ['admin', 'lecturer', 'staff'], true)
     ? __DIR__ . '/admin/includes/navbar.php'
     : __DIR__ . '/users/includes/navbar.php';
 $activePage = 'notifications';
+$isAdminNotificationPanel = in_array($userRole, ['admin', 'lecturer', 'staff'], true);
 ?>
 <!doctype html>
 <html lang="en">
@@ -129,7 +130,7 @@ $activePage = 'notifications';
             <button class="btn btn-outline-primary" type="button" data-toggle-panel="adminFeedbackBox">Send Message to Admin</button>
           <?php endif; ?>
           <?php if ($canSend): ?>
-            <a class="btn btn-primary" href="#composeBox">Compose Notification</a>
+            <button class="btn btn-primary" type="button" data-toggle-panel="composeBox">Sent Notification</button>
           <?php endif; ?>
         </div>
       <?php endif; ?>
@@ -139,10 +140,10 @@ $activePage = 'notifications';
       <div class="alert alert-info"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
 
-    <div class="row g-4">
+    <div class="row g-4 <?= $isAdminNotificationPanel ? 'skillmap-admin-notification-layout' : '' ?>">
       <div class="col-lg-7 d-grid gap-4">
         <?php if ($canSendAdminFeedback): ?>
-          <div class="card d-none" id="adminFeedbackBox">
+          <div class="card d-none skillmap-notification-feedback" id="adminFeedbackBox">
             <div class="card-body p-4">
               <h2 class="h5 fw-bold mb-3">Send Message to Admin</h2>
               <form method="post" class="d-grid gap-3">
@@ -160,13 +161,13 @@ $activePage = 'notifications';
           </div>
         <?php endif; ?>
 
-        <div class="card">
+        <div class="card skillmap-notification-inbox">
           <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h2 class="h5 fw-bold mb-0">Inbox</h2>
               <span class="badge text-bg-light border"><?= count($notifications) ?> items</span>
             </div>
-            <div class="d-grid gap-3">
+            <div class="d-grid gap-3 skillmap-notification-list" data-paginated-list="5">
               <?php foreach ($notifications as $notification): ?>
                 <?php
                   $notificationId = (int) $notification['id'];
@@ -175,7 +176,7 @@ $activePage = 'notifications';
                   $bodyText = trim((string) $notification['body']);
                   $preview = strlen($bodyText) > 140 ? substr($bodyText, 0, 140) . '...' : $bodyText;
                 ?>
-                <div class="border rounded-4 p-3 <?= $isUnread ? 'bg-light' : '' ?>">
+                <div class="border rounded-4 p-3 <?= $isUnread ? 'bg-light' : '' ?>" data-list-item>
                   <div class="d-flex justify-content-between align-items-start gap-3">
                     <div class="d-flex align-items-start gap-3">
                       <div class="avatar-circle bg-primary"><?= htmlspecialchars(substr($notification['sender_initials'] ?: 'SM', 0, 2), ENT_QUOTES, 'UTF-8') ?></div>
@@ -234,13 +235,13 @@ $activePage = 'notifications';
         </div>
 
         <?php if ($canSend): ?>
-          <div class="card">
+          <div class="card skillmap-notification-history">
             <div class="card-body p-4">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2 class="h5 fw-bold mb-0">Message History</h2>
                 <span class="badge text-bg-light border"><?= count($sentNotifications) ?> sent</span>
               </div>
-              <div class="d-grid gap-3">
+              <div class="d-grid gap-3 skillmap-notification-list" data-paginated-list="5">
                 <?php foreach ($sentNotifications as $sentNotification): ?>
                   <?php
                     $sentId = (int) $sentNotification['id'];
@@ -248,7 +249,7 @@ $activePage = 'notifications';
                     $sentBody = trim((string) $sentNotification['body']);
                     $sentPreview = strlen($sentBody) > 140 ? substr($sentBody, 0, 140) . '...' : $sentBody;
                   ?>
-                  <div class="border rounded-4 p-3">
+                  <div class="border rounded-4 p-3" data-list-item>
                     <div class="d-flex justify-content-between align-items-start gap-3">
                       <div>
                         <div class="fw-semibold"><?= htmlspecialchars($sentNotification['title'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -291,9 +292,9 @@ $activePage = 'notifications';
 
       <div class="col-lg-5 d-grid gap-4">
         <?php if ($canSend): ?>
-          <div class="card" id="composeBox">
+          <div class="card d-none skillmap-notification-compose" id="composeBox">
             <div class="card-body p-4">
-              <h2 class="h5 fw-bold mb-3">Compose Notification</h2>
+              <h2 class="h5 fw-bold mb-3">Sent Notification</h2>
               <form method="post" class="d-grid gap-3">
                 <div>
                   <label class="form-label">Recipient Mode</label>
@@ -346,7 +347,7 @@ $activePage = 'notifications';
           </div>
         <?php endif; ?>
 
-        <div class="card">
+        <div class="card skillmap-notification-summary">
           <div class="card-body p-4">
             <h2 class="h5 fw-bold mb-3">Quick Summary</h2>
             <div class="d-grid gap-3">
@@ -365,6 +366,7 @@ $activePage = 'notifications';
         </div>
       </div>
     </div>
+    <?php require __DIR__ . '/includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>

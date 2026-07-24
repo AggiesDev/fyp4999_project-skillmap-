@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     foreach ($activeSkillIds as $skillId) {
         $rating = isset($ratings[$skillId]) ? (int) $ratings[$skillId] : 0;
-        if ($rating < 1 || $rating > 5) {
+        if ($rating !== 0 && ($rating < 1 || $rating > 5)) {
             $errors[$skillId] = 'Please rate this skill from 1 to 5.';
         }
     }
@@ -81,10 +81,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
 
             foreach ($activeSkillIds as $skillId) {
+                $rating = isset($ratings[$skillId]) ? max(0, min(5, (int) $ratings[$skillId])) : 0;
                 $stmt->execute([
                     'user_id' => $userId,
                     'skill_id' => $skillId,
-                    'rating' => (int) $ratings[$skillId],
+                    'rating' => $rating,
                     'notes' => trim((string) ($notes[$skillId] ?? '')) ?: null,
                 ]);
             }
@@ -255,6 +256,7 @@ foreach ($skillsByCategory as $category => $group) {
         </div>
       </form>
     <?php endif; ?>
+    <?php require __DIR__ . '/../includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>

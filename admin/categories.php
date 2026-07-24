@@ -91,15 +91,20 @@ $categories = $pdo->query(
         <h1 class="fw-bold mb-1">Manage Categories</h1>
         <div class="text-muted">Maintain skill categories and target-role icon entries</div>
       </div>
-      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php">Role Benchmarks</a>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-primary" type="button" data-toggle-panel="categoryForm">
+          <i class="bi bi-plus-lg me-1"></i>Add Category
+        </button>
+        <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php">Role Benchmarks</a>
+      </div>
     </div>
 
     <?php if ($message !== ''): ?><div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
     <?php if ($error !== ''): ?><div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
     <div class="row g-4">
-      <div class="col-lg-4">
-        <form method="post" class="card">
+      <div class="col-lg-4 skillmap-admin-form-side">
+        <form method="post" class="card <?= $editCategory || $error !== '' ? '' : 'd-none' ?>" id="categoryForm">
           <div class="card-body p-4">
             <input type="hidden" name="action" value="save_category">
             <input type="hidden" name="category_id" value="<?= (int) ($editCategory['id'] ?? 0) ?>">
@@ -112,12 +117,12 @@ $categories = $pdo->query(
           </div>
           <div class="card-footer bg-white border-0 p-4 pt-0 d-flex gap-2">
             <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save Category</button>
-            <?php if ($editCategory): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/categories.php">Cancel</a><?php endif; ?>
+            <?php if ($editCategory): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/categories.php">Cancel</a><?php else: ?><button class="btn btn-outline-secondary" type="button" data-toggle-panel="categoryForm">Cancel</button><?php endif; ?>
           </div>
         </form>
       </div>
 
-      <div class="col-lg-8">
+      <div class="col-lg-8 skillmap-admin-table-col">
         <div class="card" data-search-scope>
           <div class="card-body p-3 p-lg-4">
             <div class="skillmap-search">
@@ -157,6 +162,7 @@ $categories = $pdo->query(
         </div>
       </div>
     </div>
+    <?php require __DIR__ . '/../includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>

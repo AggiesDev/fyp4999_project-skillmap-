@@ -139,6 +139,10 @@ function login(string $emailOrUsername, string $password): ?array
         return null;
     }
 
+    $updateLogin = $pdo->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id');
+    $updateLogin->execute(['id' => (int) $user['id']]);
+    $user['last_login_at'] = date('Y-m-d H:i:s');
+
     return set_authenticated_user($user);
 }
 

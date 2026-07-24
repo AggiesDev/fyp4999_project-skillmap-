@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   starContainers.forEach((container) => {
     const rating = Number(container.getAttribute('data-rating') || '0');
     const buttons = container.querySelectorAll('.star-btn');
-    const hiddenField = container.closest('.d-flex, .border, .card')?.querySelector('.skill-rating-value');
+    const hiddenField = container.closest('.skillmap-rating-row, .skillmap-review-rating, .d-flex, .border, .card')?.querySelector('.skill-rating-value');
 
     const paint = (value) => {
       buttons.forEach((button) => {
@@ -97,6 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
     syncRecipientMode();
   }
 
+  const syncAdminFormLayouts = () => {
+    document.querySelectorAll('.skillmap-admin-form-side').forEach((side) => {
+      const visiblePanel = side.querySelector('.card:not(.d-none)');
+      side.classList.toggle('skillmap-form-hidden', !visiblePanel);
+    });
+  };
+
   document.querySelectorAll('[data-toggle-panel]').forEach((button) => {
     button.addEventListener('click', () => {
       const targetId = button.getAttribute('data-toggle-panel');
@@ -104,8 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = document.getElementById(targetId);
       if (!target) return;
       target.classList.toggle('d-none');
+      syncAdminFormLayouts();
     });
   });
+
+  syncAdminFormLayouts();
 
   document.querySelectorAll('[data-skill-status-filter]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -114,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rowStatus = row.getAttribute('data-skill-status') || 'all';
         row.classList.toggle('d-none', filter !== 'all' && rowStatus !== filter);
       });
+      document.dispatchEvent(new CustomEvent('skillmap:table-visibility-change'));
       document.querySelectorAll('[data-skill-status-filter]').forEach((tab) => tab.classList.remove('active'));
       button.classList.add('active');
     });
@@ -128,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rowValue = (row.getAttribute('data-filter-value') || '').toLowerCase();
         row.classList.toggle('d-none', filter !== 'all' && rowValue !== filter.toLowerCase());
       });
+      document.dispatchEvent(new CustomEvent('skillmap:table-visibility-change'));
       const group = button.closest('[data-table-filter-group]');
       if (group) {
         group.querySelectorAll('[data-table-filter]').forEach((tab) => tab.classList.remove('active'));
@@ -159,10 +171,225 @@ document.addEventListener('DOMContentLoaded', () => {
       if (emptyState) {
         emptyState.classList.toggle('d-none', visibleCount > 0 || query === '');
       }
+
+      document.dispatchEvent(new CustomEvent('skillmap:table-visibility-change'));
     };
 
     input.addEventListener('input', applySearch);
     applySearch();
+  });
+
+  document.querySelectorAll('[data-select-search]').forEach((input) => {
+    const select = document.getElementById(input.getAttribute('data-select-search') || '');
+    if (!select) return;
+
+    const options = Array.from(select.options);
+    const applySelectSearch = () => {
+      const query = input.value.trim().toLowerCase();
+      let firstVisible = null;
+
+      options.forEach((option) => {
+        const matches = query === '' || option.textContent.toLowerCase().includes(query);
+        option.hidden = !matches;
+        option.disabled = !matches;
+        if (matches && firstVisible === null) {
+          firstVisible = option;
+        }
+      });
+
+      if (select.selectedOptions[0]?.disabled && firstVisible) {
+        select.value = firstVisible.value;
+      }
+    };
+
+    input.addEventListener('input', applySelectSearch);
+    applySelectSearch();
+  });
+
+  const initAdminTablePagination = () => {
+    if (!document.querySelector('.skillmap-admin-sidebar')) return;
+
+    document.querySelectorAll('.table-responsive > table').forEach((table) => {
+      if (table.dataset.skillmapPaginated === '1') return;
+
+      const tbody = table.tBodies[0];
+      if (!tbody) return;
+
+      const headerRow = table.tHead?.rows[0] || null;
+      const firstHeader = headerRow?.cells[0] || null;
+      const hasNumberColumn = firstHeader && ['#', 'no.', 'no'].includes((firstHeader.textContent || '').trim().toLowerCase());
+      if (headerRow && !hasNumberColumn) {
+        const numberHeader = document.createElement('th');
+        numberHeader.className = 'skillmap-table-number-col';
+        numberHeader.scope = 'col';
+        numberHeader.textContent = 'No.';
+        headerRow.prepend(numberHeader);
+      } else if (firstHeader) {
+        firstHeader.classList.add('skillmap-table-number-col');
+        firstHeader.textContent = 'No.';
+      }
+
+      Array.from(tbody.rows).forEach((row) => {
+        const currentColspan = Number(row.cells[0]?.getAttribute('colspan') || '0');
+        if (row.matches('[data-search-empty]') || currentColspan > 1) {
+          if (currentColspan > 0 && !row.dataset.skillmapColspanAdjusted) {
+            row.cells[0].setAttribute('colspan', String(currentColspan + (hasNumberColumn ? 0 : 1)));
+            row.dataset.skillmapColspanAdjusted = '1';
+          }
+          return;
+        }
+
+        const firstCell = row.cells[0] || null;
+        const rowHasNumberCell = firstCell?.classList.contains('skillmap-table-number-col') || hasNumberColumn;
+        if (!rowHasNumberCell) {
+          const numberCell = document.createElement('td');
+          numberCell.className = 'skillmap-table-number-col';
+          row.prepend(numberCell);
+        } else if (firstCell) {
+          firstCell.classList.add('skillmap-table-number-col');
+        }
+      });
+
+      const rows = Array.from(tbody.rows).filter((row) => !row.matches('[data-search-empty]'));
+      if (rows.length === 0) return;
+
+      table.dataset.skillmapPaginated = '1';
+
+      const pager = document.createElement('div');
+      pager.className = 'skillmap-table-pager';
+      pager.setAttribute('aria-label', 'Table pagination');
+      table.closest('.table-responsive')?.after(pager);
+
+      let currentPage = 1;
+      const rowsPerPage = 10;
+
+      const visibleRows = () => rows.filter((row) => !row.classList.contains('d-none'));
+
+      const refreshRowNumbers = (activeRows) => {
+        activeRows.forEach((row, index) => {
+          const numberCell = row.querySelector('.skillmap-table-number-col');
+          if (numberCell) {
+            numberCell.textContent = String(index + 1);
+          }
+        });
+      };
+
+      const render = () => {
+        const activeRows = visibleRows();
+        const totalPages = Math.max(1, Math.ceil(activeRows.length / rowsPerPage));
+        currentPage = Math.min(currentPage, totalPages);
+        currentPage = Math.max(currentPage, 1);
+        refreshRowNumbers(activeRows);
+
+        rows.forEach((row) => {
+          row.hidden = true;
+        });
+
+        activeRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).forEach((row) => {
+          row.hidden = false;
+        });
+
+        pager.innerHTML = '';
+        if (activeRows.length <= rowsPerPage) {
+          pager.classList.add('d-none');
+          return;
+        }
+
+        pager.classList.remove('d-none');
+
+        const summary = document.createElement('div');
+        summary.className = 'skillmap-table-pager-summary';
+        summary.textContent = `Page ${currentPage} of ${totalPages}`;
+        pager.append(summary);
+
+        const pageList = document.createElement('div');
+        pageList.className = 'skillmap-table-pager-pages';
+
+        for (let page = 1; page <= totalPages; page += 1) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `btn btn-sm ${page === currentPage ? 'btn-primary' : 'btn-outline-secondary'}`;
+          button.textContent = String(page);
+          button.setAttribute('aria-label', `Go to page ${page}`);
+          button.setAttribute('aria-current', page === currentPage ? 'page' : 'false');
+          button.addEventListener('click', () => {
+            currentPage = page;
+            render();
+          });
+          pageList.append(button);
+        }
+
+        pager.append(pageList);
+      };
+
+      document.addEventListener('skillmap:table-visibility-change', () => {
+        currentPage = 1;
+        render();
+      });
+      render();
+    });
+  };
+
+  initAdminTablePagination();
+
+  document.querySelectorAll('[data-paginated-list]').forEach((list) => {
+    const itemsPerPage = Math.max(1, Number(list.getAttribute('data-paginated-list') || '5'));
+    const items = Array.from(list.querySelectorAll(':scope > [data-list-item]'));
+    if (items.length === 0) return;
+
+    const pager = document.createElement('div');
+    pager.className = 'skillmap-table-pager skillmap-list-pager';
+    pager.setAttribute('aria-label', 'Message pagination');
+    list.after(pager);
+
+    let currentPage = 1;
+
+    const render = () => {
+      const totalPages = Math.max(1, Math.ceil(items.length / itemsPerPage));
+      currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+      items.forEach((item) => {
+        item.hidden = true;
+      });
+
+      items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).forEach((item) => {
+        item.hidden = false;
+      });
+
+      pager.innerHTML = '';
+      if (items.length <= itemsPerPage) {
+        pager.classList.add('d-none');
+        return;
+      }
+
+      pager.classList.remove('d-none');
+
+      const summary = document.createElement('div');
+      summary.className = 'skillmap-table-pager-summary';
+      summary.textContent = `Page ${currentPage} of ${totalPages}`;
+      pager.append(summary);
+
+      const pageList = document.createElement('div');
+      pageList.className = 'skillmap-table-pager-pages';
+
+      for (let page = 1; page <= totalPages; page += 1) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `btn btn-sm ${page === currentPage ? 'btn-primary' : 'btn-outline-secondary'}`;
+        button.textContent = String(page);
+        button.setAttribute('aria-label', `Go to page ${page}`);
+        button.setAttribute('aria-current', page === currentPage ? 'page' : 'false');
+        button.addEventListener('click', () => {
+          currentPage = page;
+          render();
+        });
+        pageList.append(button);
+      }
+
+      pager.append(pageList);
+    };
+
+    render();
   });
 
   const profilePreview = document.querySelector('.profile-icon-preview');

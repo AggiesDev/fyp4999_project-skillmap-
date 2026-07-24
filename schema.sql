@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   gender ENUM('male','female') NOT NULL DEFAULT 'male',
   profile_icon VARCHAR(190) NOT NULL DEFAULT 'profileicons/icons8-add-user-male-100.png',
   status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
+  last_login_at DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

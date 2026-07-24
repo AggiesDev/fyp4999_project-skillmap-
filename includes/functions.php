@@ -146,6 +146,9 @@ function skillmap_bootstrap_database(): void
     if (!skillmap_user_column_exists('profile_icon')) {
         mysqli_query($conn, 'ALTER TABLE users ADD COLUMN profile_icon VARCHAR(190) NOT NULL DEFAULT "profileicons/icons8-add-user-male-100.png" AFTER gender');
     }
+    if (!skillmap_user_column_exists('last_login_at')) {
+        mysqli_query($conn, 'ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER status');
+    }
     @mysqli_query($conn, 'UPDATE users SET gender = "male" WHERE gender IS NULL OR gender = ""');
     @mysqli_query($conn, 'UPDATE users SET profile_icon = CASE WHEN role IN ("admin", "staff", "lecturer") THEN "profileicons/icons8-administrator-male-100.png" ELSE "profileicons/icons8-add-user-male-100.png" END WHERE profile_icon IS NULL OR profile_icon = ""');
     @mysqli_query($conn, 'UPDATE users SET profile_icon = "profileicons/icons8-administrator-male-100.png" WHERE role IN ("admin", "staff", "lecturer") AND profile_icon = "profileicons/icons8-add-user-male-100.png"');

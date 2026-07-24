@@ -96,7 +96,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         </div>
       </div> -->
 
-      <div class="skillmap-auth-footer">Develop by Aggies · &copy; <?= htmlspecialchars($currentYear, ENT_QUOTES, 'UTF-8') ?> Skill Map License. All rights reserved.</div>
+      <div class="skillmap-auth-footer">Develop by AggiesDev. &copy; <?= htmlspecialchars($currentYear, ENT_QUOTES, 'UTF-8') ?> Skill Map License. All Rights Reserved.</div>
     </section>
 
     <section class="skillmap-auth-form-panel">
@@ -266,7 +266,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         </div>
       </div>
 
-      <div class="skillmap-auth-footer text-center mt-3">Develop by Aggies · &copy; <?= htmlspecialchars($currentYear, ENT_QUOTES, 'UTF-8') ?> Skill Map License</div>
+      <div class="skillmap-auth-footer text-center mt-3">Develop by AggiesDEV. &copy; <?= htmlspecialchars($currentYear, ENT_QUOTES, 'UTF-8') ?> Skill Map License. All Rights Reserved.</div>
     </section>
   </main>
 

@@ -132,15 +132,20 @@ $skills = $pdo->query(
         <h1 class="fw-bold mb-1">Skill Library</h1>
         <div class="text-muted">Create and maintain the skills used by assessments and benchmarks</div>
       </div>
-      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/categories.php">Manage Categories</a>
+      <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-primary" type="button" data-toggle-panel="skillLibraryForm">
+          <i class="bi bi-plus-lg me-1"></i>Add Skill
+        </button>
+        <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/categories.php">Manage Categories</a>
+      </div>
     </div>
 
     <?php if ($message !== ''): ?><div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
     <?php if ($error !== ''): ?><div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
     <div class="row g-4">
-      <div class="col-xl-4">
-        <form method="post" class="card">
+      <div class="col-xl-4 skillmap-admin-form-side">
+        <form method="post" class="card <?= $editSkill || $error !== '' ? '' : 'd-none' ?>" id="skillLibraryForm">
           <div class="card-body p-4">
             <input type="hidden" name="action" value="save_skill">
             <input type="hidden" name="skill_id" value="<?= (int) ($editSkill['id'] ?? 0) ?>">
@@ -157,12 +162,12 @@ $skills = $pdo->query(
           </div>
           <div class="card-footer bg-white border-0 p-4 pt-0 d-flex gap-2">
             <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save Skill</button>
-            <?php if ($editSkill): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/skill_library.php">Cancel</a><?php endif; ?>
+            <?php if ($editSkill): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/skill_library.php">Cancel</a><?php else: ?><button class="btn btn-outline-secondary" type="button" data-toggle-panel="skillLibraryForm">Cancel</button><?php endif; ?>
           </div>
         </form>
       </div>
 
-      <div class="col-xl-8">
+      <div class="col-xl-8 skillmap-admin-table-col">
         <div class="card" data-search-scope>
           <div class="card-body p-3 p-lg-4">
             <div class="skillmap-search">
@@ -202,6 +207,7 @@ $skills = $pdo->query(
         </div>
       </div>
     </div>
+    <?php require __DIR__ . '/../includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>
