@@ -423,16 +423,27 @@ document.addEventListener('DOMContentLoaded', () => {
   if (adminSidebarToggle) {
     const storageKey = 'skillmap-admin-sidebar-collapsed';
     const mobileMedia = window.matchMedia('(max-width: 991.98px)');
-    const applySidebarState = (collapsed) => {
+    const setStoredSidebarState = (collapsed) => {
       document.body.classList.toggle('admin-sidebar-collapsed', collapsed);
-      localStorage.setItem(storageKey, collapsed ? '1' : '0');
+      try {
+        localStorage.setItem(storageKey, collapsed ? '1' : '0');
+      } catch (error) {
+        // Browsers can block storage in private modes; the button should still work.
+      }
+    };
+    const storedSidebarCollapsed = () => {
+      try {
+        return localStorage.getItem(storageKey) === '1';
+      } catch (error) {
+        return false;
+      }
     };
     const syncSidebarMode = () => {
       if (mobileMedia.matches) {
         document.body.classList.remove('admin-sidebar-collapsed');
       } else {
         document.body.classList.remove('admin-sidebar-open');
-        applySidebarState(localStorage.getItem(storageKey) === '1');
+        document.body.classList.toggle('admin-sidebar-collapsed', storedSidebarCollapsed());
       }
     };
 
@@ -442,7 +453,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle('admin-sidebar-open');
         return;
       }
-      applySidebarState(!document.body.classList.contains('admin-sidebar-collapsed'));
+      setStoredSidebarState(!document.body.classList.contains('admin-sidebar-collapsed'));
+    });
+    document.querySelectorAll('.skillmap-admin-menu-link').forEach((link) => {
+      link.addEventListener('click', () => {
+        if (mobileMedia.matches) {
+          document.body.classList.remove('admin-sidebar-open');
+        }
+      });
     });
     mobileMedia.addEventListener?.('change', syncSidebarMode);
   }

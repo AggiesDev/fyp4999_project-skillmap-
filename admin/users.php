@@ -8,6 +8,7 @@ $activePage = 'users';
 $message = '';
 $error = '';
 $editUser = null;
+$postAction = '';
 
 function admin_user_initials(string $name): string
 {
@@ -46,6 +47,7 @@ function admin_render_profile_icon_choices(string $selectedIcon): void
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
+    $postAction = $action;
 
     if ($action === 'save_user') {
         $userId = (int) ($_POST['user_id'] ?? 0);
@@ -275,12 +277,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 }
 
-$editId = (int) ($_GET['edit'] ?? 0);
+$editId = isset($_GET['new']) ? 0 : (int) ($_GET['edit'] ?? 0);
 if ($editId > 0) {
     $stmt = $pdo->prepare('SELECT id, name, username, email, role, programme, year_level, avatar_initials, gender, profile_icon, status, last_login_at FROM users WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $editId]);
     $editUser = $stmt->fetch() ?: null;
 }
+$showUserForm = $editUser || isset($_GET['new']) || ($error !== '' && $postAction === 'save_user');
+$addUserHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/users.php' : '/fyp_skillmapsystem/admin/users.php?new=1';
 
 $users = $pdo->query(
     'SELECT u.id, u.name, u.username, u.email, u.role, u.programme, u.year_level, u.avatar_initials, u.gender, u.profile_icon, u.status, u.last_login_at,
@@ -323,9 +327,9 @@ $formOptions = admin_user_form_options($pdo);
         <div class="text-muted">Create accounts, update roles, and control access status</div>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-primary" type="button" data-toggle-panel="adminUserForm">
+        <a class="btn btn-primary" href="<?= htmlspecialchars($addUserHref, ENT_QUOTES, 'UTF-8') ?>">
           <i class="bi bi-person-plus me-1"></i>Add New User
-        </button>
+        </a>
         <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/permissions.php">Manage Permissions</a>
       </div>
     </div>
@@ -380,7 +384,7 @@ $formOptions = admin_user_form_options($pdo);
           </div>
         <?php endif; ?>
 
-        <form method="post" class="card <?= $editUser || $error !== '' ? '' : 'd-none' ?>" id="adminUserForm">
+        <form method="post" class="card <?= $showUserForm ? '' : 'd-none' ?>" id="adminUserForm">
           <div class="card-body p-4">
             <input type="hidden" name="action" value="save_user">
             <input type="hidden" name="user_id" value="<?= (int) ($editUser['id'] ?? 0) ?>">
@@ -501,7 +505,8 @@ $formOptions = admin_user_form_options($pdo);
                       <td><?= skillmap_status_badge($row['status']) ?></td>
                       <td class="skillmap-actions-col">
                         <div class="d-flex flex-wrap gap-2">
-                          <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/users.php?edit=<?= (int) $row['id'] ?>"><i class="bi bi-pencil"></i></a>
+                          <?php $editUserHref = $editId === (int) $row['id'] ? '/fyp_skillmapsystem/admin/users.php' : '/fyp_skillmapsystem/admin/users.php?edit=' . (int) $row['id']; ?>
+                          <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($editUserHref, ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-pencil"></i></a>
                           <?php if ($row['role'] === 'student'): ?><a class="btn btn-sm btn-outline-secondary" href="/fyp_skillmapsystem/admin/reviews.php?student_id=<?= (int) $row['id'] ?>"><i class="bi bi-person-check"></i></a><?php endif; ?>
                           <form method="post">
                             <input type="hidden" name="action" value="toggle_status">

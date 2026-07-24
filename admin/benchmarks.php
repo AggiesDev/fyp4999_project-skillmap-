@@ -139,6 +139,7 @@ if (!$selectedRole && $roles !== []) {
 }
 $roleFormRole = isset($_GET['new']) ? null : $selectedRole;
 $showRoleForm = isset($_GET['edit_role']) || isset($_GET['new']);
+$newRoleHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/benchmarks.php?role_id=' . (int) $selectedRoleId : '/fyp_skillmapsystem/admin/benchmarks.php?new=1';
 
 $benchmarks = [];
 if ($selectedRoleId > 0) {
@@ -192,7 +193,7 @@ $skills = $pdo->query(
           <div class="card-body p-3 p-lg-4">
             <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
               <div class="fw-bold">Roles</div>
-              <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php?new=1">New Role</a>
+              <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($newRoleHref, ENT_QUOTES, 'UTF-8') ?>">New Role</a>
             </div>
             <div class="skillmap-search mb-3">
               <i class="bi bi-search"></i>
@@ -209,7 +210,8 @@ $skills = $pdo->query(
                     <div class="small opacity-75"><?= (int) $role['skills'] ?> skills · <?= (float) $role['avg_required'] ?> avg</div>
                   </a>
                   <div class="skillmap-role-list-actions">
-                    <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $role['id'] ?>&edit_role=1" title="Edit role" aria-label="Edit <?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?>">
+                    <?php $editRoleHref = $showRoleForm && !isset($_GET['new']) && (int) $role['id'] === $selectedRoleId ? '/fyp_skillmapsystem/admin/benchmarks.php?role_id=' . (int) $role['id'] : '/fyp_skillmapsystem/admin/benchmarks.php?role_id=' . (int) $role['id'] . '&edit_role=1'; ?>
+                    <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($editRoleHref, ENT_QUOTES, 'UTF-8') ?>" title="Edit role" aria-label="Edit <?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?>">
                       <i class="bi bi-pencil"></i>
                     </a>
                     <form method="post">
@@ -291,7 +293,7 @@ $skills = $pdo->query(
                 <tbody>
                   <?php foreach ($benchmarks as $benchmark): ?>
                     <tr data-search-item data-search-text="<?= htmlspecialchars($benchmark['skill_name'] . ' ' . $benchmark['category'] . ' ' . $benchmark['priority'] . ' ' . $benchmark['required_rating'] . '/5', ENT_QUOTES, 'UTF-8') ?>">
-                      <td class="skillmap-actions-col">
+                      <td>
                         <?php $editFormId = 'benchmarkEdit' . (int) $benchmark['id']; ?>
                         <form id="<?= $editFormId ?>" method="post"></form>
                         <input form="<?= $editFormId ?>" type="hidden" name="action" value="save_benchmark">
@@ -302,7 +304,7 @@ $skills = $pdo->query(
                       <td><span class="badge badge-soft rounded-pill"><?= htmlspecialchars($benchmark['category'], ENT_QUOTES, 'UTF-8') ?></span></td>
                       <td><select form="<?= $editFormId ?>" name="required_rating" class="form-select form-select-sm"><?php for ($i = 1; $i <= 5; $i++): ?><option value="<?= $i ?>" <?= (int) $benchmark['required_rating'] === $i ? 'selected' : '' ?>><?= $i ?>/5</option><?php endfor; ?></select></td>
                       <td><select form="<?= $editFormId ?>" name="priority" class="form-select form-select-sm"><?php foreach (['Critical', 'Important', 'Optional'] as $priority): ?><option value="<?= $priority ?>" <?= $benchmark['priority'] === $priority ? 'selected' : '' ?>><?= $priority ?></option><?php endforeach; ?></select></td>
-                      <td>
+                      <td class="skillmap-actions-col">
                         <div class="d-flex gap-2">
                           <button form="<?= $editFormId ?>" class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-check2"></i></button>
                           <form method="post">

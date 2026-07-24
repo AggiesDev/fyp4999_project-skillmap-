@@ -8,9 +8,11 @@ $activePage = 'categories';
 $message = '';
 $error = '';
 $editCategory = null;
+$postAction = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
+    $postAction = $action;
 
     if ($action === 'save_category') {
         $categoryId = (int) ($_POST['category_id'] ?? 0);
@@ -57,12 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$editId = (int) ($_GET['edit'] ?? 0);
+$editId = isset($_GET['new']) ? 0 : (int) ($_GET['edit'] ?? 0);
 if ($editId > 0) {
     $stmt = $pdo->prepare('SELECT id, name, type, icon FROM skill_categories WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $editId]);
     $editCategory = $stmt->fetch() ?: null;
 }
+$showCategoryForm = $editCategory || isset($_GET['new']) || ($error !== '' && $postAction === 'save_category');
+$addCategoryHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/categories.php' : '/fyp_skillmapsystem/admin/categories.php?new=1';
 
 $categories = $pdo->query(
     'SELECT sc.id, sc.name, sc.type, sc.icon, DATE_FORMAT(sc.updated_at, "%e %b %Y") AS updated,
@@ -92,9 +96,9 @@ $categories = $pdo->query(
         <div class="text-muted">Maintain skill categories and target-role icon entries</div>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-primary" type="button" data-toggle-panel="categoryForm">
+        <a class="btn btn-primary" href="<?= htmlspecialchars($addCategoryHref, ENT_QUOTES, 'UTF-8') ?>">
           <i class="bi bi-plus-lg me-1"></i>Add Category
-        </button>
+        </a>
         <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php">Role Benchmarks</a>
       </div>
     </div>
@@ -104,7 +108,7 @@ $categories = $pdo->query(
 
     <div class="row g-4">
       <div class="col-lg-4 skillmap-admin-form-side">
-        <form method="post" class="card <?= $editCategory || $error !== '' ? '' : 'd-none' ?>" id="categoryForm">
+        <form method="post" class="card <?= $showCategoryForm ? '' : 'd-none' ?>" id="categoryForm">
           <div class="card-body p-4">
             <input type="hidden" name="action" value="save_category">
             <input type="hidden" name="category_id" value="<?= (int) ($editCategory['id'] ?? 0) ?>">
@@ -144,7 +148,8 @@ $categories = $pdo->query(
                     <td><?= htmlspecialchars($category['updated'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td class="skillmap-actions-col">
                       <div class="d-flex gap-2">
-                        <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/categories.php?edit=<?= (int) $category['id'] ?>"><i class="bi bi-pencil"></i></a>
+                        <?php $editCategoryHref = $editId === (int) $category['id'] ? '/fyp_skillmapsystem/admin/categories.php' : '/fyp_skillmapsystem/admin/categories.php?edit=' . (int) $category['id']; ?>
+                        <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($editCategoryHref, ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-pencil"></i></a>
                         <form method="post">
                           <input type="hidden" name="action" value="delete_category">
                           <input type="hidden" name="category_id" value="<?= (int) $category['id'] ?>">

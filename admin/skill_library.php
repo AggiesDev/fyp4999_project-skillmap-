@@ -8,9 +8,11 @@ $activePage = 'skill_library';
 $message = '';
 $error = '';
 $editSkill = null;
+$postAction = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
+    $postAction = $action;
 
     if ($action === 'save_skill') {
         $skillId = (int) ($_POST['skill_id'] ?? 0);
@@ -94,12 +96,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$editId = (int) ($_GET['edit'] ?? 0);
+$editId = isset($_GET['new']) ? 0 : (int) ($_GET['edit'] ?? 0);
 if ($editId > 0) {
     $stmt = $pdo->prepare('SELECT id, category_id, name, description, difficulty, status FROM skills WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $editId]);
     $editSkill = $stmt->fetch() ?: null;
 }
+$showSkillForm = $editSkill || isset($_GET['new']) || ($error !== '' && $postAction === 'save_skill');
+$addSkillHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/skill_library.php' : '/fyp_skillmapsystem/admin/skill_library.php?new=1';
 
 $categories = $pdo->query('SELECT id, name, icon FROM skill_categories WHERE type = "Skill Category" ORDER BY name')->fetchAll();
 $skills = $pdo->query(
@@ -133,9 +137,9 @@ $skills = $pdo->query(
         <div class="text-muted">Create and maintain the skills used by assessments and benchmarks</div>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-primary" type="button" data-toggle-panel="skillLibraryForm">
+        <a class="btn btn-primary" href="<?= htmlspecialchars($addSkillHref, ENT_QUOTES, 'UTF-8') ?>">
           <i class="bi bi-plus-lg me-1"></i>Add Skill
-        </button>
+        </a>
         <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/categories.php">Manage Categories</a>
       </div>
     </div>
@@ -145,7 +149,7 @@ $skills = $pdo->query(
 
     <div class="row g-4">
       <div class="col-xl-4 skillmap-admin-form-side">
-        <form method="post" class="card <?= $editSkill || $error !== '' ? '' : 'd-none' ?>" id="skillLibraryForm">
+        <form method="post" class="card <?= $showSkillForm ? '' : 'd-none' ?>" id="skillLibraryForm">
           <div class="card-body p-4">
             <input type="hidden" name="action" value="save_skill">
             <input type="hidden" name="skill_id" value="<?= (int) ($editSkill['id'] ?? 0) ?>">
@@ -189,7 +193,8 @@ $skills = $pdo->query(
                     <td><?= skillmap_status_badge($skill['status']) ?></td>
                     <td class="skillmap-actions-col">
                       <div class="d-flex gap-2">
-                        <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/admin/skill_library.php?edit=<?= (int) $skill['id'] ?>"><i class="bi bi-pencil"></i></a>
+                        <?php $editSkillHref = $editId === (int) $skill['id'] ? '/fyp_skillmapsystem/admin/skill_library.php' : '/fyp_skillmapsystem/admin/skill_library.php?edit=' . (int) $skill['id']; ?>
+                        <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($editSkillHref, ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-pencil"></i></a>
                         <form method="post">
                           <input type="hidden" name="action" value="delete_skill">
                           <input type="hidden" name="skill_id" value="<?= (int) $skill['id'] ?>">
