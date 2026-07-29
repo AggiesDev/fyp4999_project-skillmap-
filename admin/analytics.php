@@ -100,6 +100,56 @@ foreach ($statusSummary as $row) {
     $statusCounts[$row['status']] = (int) $row['total'];
 }
 $resultTotal = array_sum($statusCounts);
+
+$analysisTrend = $pdo->query(
+    'SELECT DATE_FORMAT(created_at, "%b %Y") AS period_label,
+            DATE_FORMAT(created_at, "%Y-%m") AS period_key,
+            COUNT(*) AS total,
+            COALESCE(ROUND(AVG(match_score)), 0) AS avg_match
+     FROM analyses
+     WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+     GROUP BY period_key, period_label
+     ORDER BY period_key'
+)->fetchAll();
+
+$programmeReadiness = $pdo->query(
+    'SELECT u.programme,
+            COUNT(DISTINCT u.id) AS students,
+            COUNT(a.id) AS analyses,
+            COALESCE(ROUND(AVG(a.match_score)), 0) AS avg_match
+     FROM users u
+     LEFT JOIN analyses a ON a.user_id = u.id
+     WHERE u.role = "student"
+     GROUP BY u.programme
+     ORDER BY avg_match DESC, students DESC, u.programme
+     LIMIT 8'
+)->fetchAll();
+
+$latestStudentAnalyses = $pdo->query(
+    'SELECT u.id, u.name, u.programme, cr.name AS role_name, a.match_score, a.created_at
+     FROM users u
+     INNER JOIN analyses a ON a.user_id = u.id
+     INNER JOIN career_roles cr ON cr.id = a.target_role_id
+     WHERE u.role = "student"
+       AND a.created_at = (
+         SELECT MAX(a2.created_at)
+         FROM analyses a2
+         WHERE a2.user_id = u.id
+       )
+     ORDER BY a.match_score ASC, a.created_at DESC
+     LIMIT 6'
+)->fetchAll();
+
+$activeStudents = (int) $pdo->query(
+    'SELECT COUNT(DISTINCT user_id)
+     FROM user_skill_ratings
+     WHERE updated_at >= CURDATE() - INTERVAL 30 DAY'
+)->fetchColumn();
+$assessmentCoverage = $totalStudents > 0 ? (int) round(($activeStudents / $totalStudents) * 100) : 0;
+$missingPct = $resultTotal > 0 ? (int) round(($statusCounts['Missing'] / $resultTotal) * 100) : 0;
+$trendLatest = $analysisTrend !== [] ? $analysisTrend[count($analysisTrend) - 1] : null;
+$trendPrevious = count($analysisTrend) > 1 ? $analysisTrend[count($analysisTrend) - 2] : null;
+$trendChange = $trendLatest && $trendPrevious ? (int) $trendLatest['avg_match'] - (int) $trendPrevious['avg_match'] : 0;
 ?>
 <!doctype html>
 <html lang="en">
@@ -133,6 +183,81 @@ $resultTotal = array_sum($statusCounts);
       <?php if ($canViewGapAnalytics): ?>
         <div class="col-md-6 col-xl-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Most Missing Skill</div><div class="fs-5 fw-bold"><?= htmlspecialchars((string) ($missingSkill['name'] ?? 'No missing skills yet'), ENT_QUOTES, 'UTF-8') ?></div><div class="text-danger small"><?= (int) ($missingSkill['total'] ?? 0) ?> missing results</div></div></div></div>
       <?php endif; ?>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6 col-xl-3">
+        <div class="skillmap-insight-card h-100">
+          <div class="skillmap-insight-icon text-bg-primary"><i class="bi bi-activity"></i></div>
+          <div>
+            <div class="small text-muted">Assessment Activity</div>
+            <div class="fs-4 fw-bold"><?= $assessmentCoverage ?>%</div>
+            <div class="small text-muted"><?= $activeStudents ?> active students in 30 days</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <div class="skillmap-insight-card h-100">
+          <div class="skillmap-insight-icon text-bg-success"><i class="bi bi-graph-up-arrow"></i></div>
+          <div>
+            <div class="small text-muted">Readiness Trend</div>
+            <div class="fs-4 fw-bold"><?= $trendLatest ? (int) $trendLatest['avg_match'] . '%' : '0%' ?></div>
+            <div class="small <?= $trendChange >= 0 ? 'text-success' : 'text-danger' ?>"><?= $trendChange >= 0 ? '+' : '' ?><?= $trendChange ?> from previous month</div>
+          </div>
+        </div>
+      </div>
+      <?php if ($canViewGapAnalytics): ?>
+        <div class="col-md-6 col-xl-3">
+          <div class="skillmap-insight-card h-100">
+            <div class="skillmap-insight-icon text-bg-danger"><i class="bi bi-exclamation-triangle"></i></div>
+            <div>
+              <div class="small text-muted">Missing Skill Risk</div>
+              <div class="fs-4 fw-bold"><?= $missingPct ?>%</div>
+              <div class="small text-muted"><?= $statusCounts['Missing'] ?> missing of <?= $resultTotal ?> results</div>
+            </div>
+          </div>
+        </div>
+      <?php endif; ?>
+      <div class="col-md-6 col-xl-3">
+        <div class="skillmap-insight-card h-100">
+          <div class="skillmap-insight-icon text-bg-warning"><i class="bi bi-lightbulb"></i></div>
+          <div>
+            <div class="small text-muted">Recommended Focus</div>
+            <div class="fs-6 fw-bold"><?= htmlspecialchars((string) ($missingSkill['name'] ?? 'Collect more data'), ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="small text-muted"><?= $analysisCount ?> analyses available</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-xl-7">
+        <div class="card h-100">
+          <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+              <h2 class="h5 fw-bold mb-0">Six-Month Readiness Trend</h2>
+              <span class="badge text-bg-light border"><?= count($analysisTrend) ?> active month<?= count($analysisTrend) === 1 ? '' : 's' ?></span>
+            </div>
+            <?php if ($analysisTrend === []): ?>
+              <div class="alert alert-light border mb-0">No analysis trend data yet.</div>
+            <?php else: ?>
+              <div class="skillmap-chart-box"><canvas id="analysisTrendChart"></canvas></div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-5">
+        <div class="card h-100">
+          <div class="card-body p-4">
+            <h2 class="h5 fw-bold mb-3">Programme Readiness Comparison</h2>
+            <?php if ($programmeReadiness === []): ?>
+              <div class="alert alert-light border mb-0">No programme readiness data yet.</div>
+            <?php else: ?>
+              <div class="skillmap-chart-box skillmap-chart-box-sm"><canvas id="programmeReadinessChart"></canvas></div>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
     </div>
 
     <?php if ($canViewGapAnalytics): ?>
@@ -202,7 +327,7 @@ $resultTotal = array_sum($statusCounts);
       </div>
 
       <div class="row g-4 mb-4">
-        <div class="col-12">
+        <div class="col-xl-8">
           <div class="card">
             <div class="card-body p-4">
               <h2 class="h5 fw-bold mb-3">Gap Severity Bar Chart</h2>
@@ -210,6 +335,18 @@ $resultTotal = array_sum($statusCounts);
                 <div class="alert alert-light border mb-0">No gap chart data yet.</div>
               <?php else: ?>
                 <div class="skillmap-chart-box"><canvas id="gapSeverityChart"></canvas></div>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-4">
+          <div class="card h-100">
+            <div class="card-body p-4">
+              <h2 class="h5 fw-bold mb-3">Skill Status Mix</h2>
+              <?php if ($resultTotal === 0): ?>
+                <div class="alert alert-light border mb-0">No status mix data yet.</div>
+              <?php else: ?>
+                <div class="skillmap-chart-box skillmap-chart-box-sm"><canvas id="statusMixChart"></canvas></div>
               <?php endif; ?>
             </div>
           </div>
@@ -258,15 +395,106 @@ $resultTotal = array_sum($statusCounts);
         </div>
       <?php endif; ?>
     </div>
+
+    <?php if ($latestStudentAnalyses !== [] && ($canManageUsers || $canReviewSkills)): ?>
+      <div class="row g-4 mt-1">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body p-4">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h2 class="h5 fw-bold mb-0">Students Needing Support</h2>
+                <span class="badge text-bg-light border">Latest analysis per student</span>
+              </div>
+              <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                  <thead><tr><th>Student</th><th>Programme</th><th>Target Role</th><th>Latest Score</th><th>Date</th></tr></thead>
+                  <tbody>
+                    <?php foreach ($latestStudentAnalyses as $studentAnalysis): ?>
+                      <tr>
+                        <td class="fw-semibold"><?= htmlspecialchars((string) $studentAnalysis['name'], ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) $studentAnalysis['programme'], ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) $studentAnalysis['role_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><span class="badge <?= (int) round((float) $studentAnalysis['match_score']) >= 70 ? 'text-bg-success' : 'text-bg-warning' ?>"><?= (int) round((float) $studentAnalysis['match_score']) ?>%</span></td>
+                        <td><?= htmlspecialchars(date('j M Y', strtotime((string) $studentAnalysis['created_at'])), ENT_QUOTES, 'UTF-8') ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <?php endif; ?>
     <?php require __DIR__ . '/../includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <?php if ($canViewGapAnalytics && $gapSeverity !== []): ?>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <?php endif; ?>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>
-  <?php if ($canViewGapAnalytics && $gapSeverity !== []): ?>
     <script>
+      const skillmapChartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { usePointStyle: true, boxWidth: 10 } }
+        }
+      };
+
+      const analysisTrendCanvas = document.getElementById('analysisTrendChart');
+      if (analysisTrendCanvas && typeof Chart !== 'undefined') {
+        new Chart(analysisTrendCanvas, {
+          type: 'line',
+          data: {
+            labels: <?= json_encode(array_column($analysisTrend, 'period_label'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+            datasets: [
+              {
+                label: 'Avg Match Score',
+                data: <?= json_encode(array_map('intval', array_column($analysisTrend, 'avg_match')), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                tension: 0.35,
+                fill: true,
+                yAxisID: 'y'
+              },
+              {
+                label: 'Analyses',
+                data: <?= json_encode(array_map('intval', array_column($analysisTrend, 'total')), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+                borderColor: '#14b8a6',
+                backgroundColor: 'rgba(20, 184, 166, 0.12)',
+                tension: 0.35,
+                fill: false,
+                yAxisID: 'y1'
+              }
+            ]
+          },
+          options: {
+            ...skillmapChartDefaults,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+              y: { beginAtZero: true, max: 100, title: { display: true, text: 'Score %' } },
+              y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 }, title: { display: true, text: 'Analyses' } }
+            }
+          }
+        });
+      }
+
+      const programmeReadinessCanvas = document.getElementById('programmeReadinessChart');
+      if (programmeReadinessCanvas && typeof Chart !== 'undefined') {
+        new Chart(programmeReadinessCanvas, {
+          type: 'bar',
+          data: {
+            labels: <?= json_encode(array_column($programmeReadiness, 'programme'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+            datasets: [{
+              label: 'Avg Match Score',
+              data: <?= json_encode(array_map('intval', array_column($programmeReadiness, 'avg_match')), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+              backgroundColor: '#2563eb',
+              borderRadius: 6
+            }]
+          },
+          options: { ...skillmapChartDefaults, indexAxis: 'y', scales: { x: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+        });
+      }
+
       const gapSeverityCanvas = document.getElementById('gapSeverityChart');
       if (gapSeverityCanvas && typeof Chart !== 'undefined') {
         new Chart(gapSeverityCanvas, {
@@ -279,14 +507,28 @@ $resultTotal = array_sum($statusCounts);
             ]
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            ...skillmapChartDefaults,
             scales: { x: { stacked: true }, y: { beginAtZero: true, stacked: true, ticks: { precision: 0 } } },
             plugins: { legend: { position: 'bottom' } }
           }
         });
       }
+
+      const statusMixCanvas = document.getElementById('statusMixChart');
+      if (statusMixCanvas && typeof Chart !== 'undefined') {
+        new Chart(statusMixCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: ['Have', 'Partial', 'Missing'],
+            datasets: [{
+              data: [<?= $statusCounts['Have'] ?>, <?= $statusCounts['Partial'] ?>, <?= $statusCounts['Missing'] ?>],
+              backgroundColor: ['#16a34a', '#f59e0b', '#dc2626'],
+              borderWidth: 0
+            }]
+          },
+          options: { ...skillmapChartDefaults, cutout: '68%', plugins: { legend: { position: 'bottom' } } }
+        });
+      }
     </script>
-  <?php endif; ?>
 </body>
 </html>

@@ -35,6 +35,7 @@ $latestAnalysis = $latestStmt->fetch() ?: null;
 
 $summary = ['Have' => 0, 'Partial' => 0, 'Missing' => 0];
 $focusItems = [];
+$categoryReadiness = [];
 $roadmapCompletePct = 0;
 if ($latestAnalysis) {
     $summaryStmt = $pdo->prepare('SELECT status, COUNT(*) AS total FROM analysis_results WHERE analysis_id = :analysis_id GROUP BY status');
@@ -42,6 +43,20 @@ if ($latestAnalysis) {
     foreach ($summaryStmt->fetchAll() as $row) {
         $summary[(string) $row['status']] = (int) $row['total'];
     }
+
+    $categoryStmt = $pdo->prepare(
+        'SELECT c.name,
+                COALESCE(ROUND(AVG(CASE WHEN ar.required_rating > 0 THEN LEAST(ar.your_rating, ar.required_rating) / ar.required_rating * 100 ELSE NULL END)), 0) AS readiness,
+                COUNT(*) AS total
+         FROM analysis_results ar
+         INNER JOIN skills s ON s.id = ar.skill_id
+         INNER JOIN skill_categories c ON c.id = s.category_id
+         WHERE ar.analysis_id = :analysis_id
+         GROUP BY c.id, c.name
+         ORDER BY c.name'
+    );
+    $categoryStmt->execute(['analysis_id' => (int) $latestAnalysis['id']]);
+    $categoryReadiness = $categoryStmt->fetchAll();
 
     $focusStmt = $pdo->prepare(
         'SELECT ar.skill_id, ar.status, ar.gap_value, s.name AS skill_name, lr.title, lr.platform, lr.duration_hours
@@ -179,7 +194,18 @@ $lastAnalysisDate = $latestAnalysis ? date('j M Y', strtotime((string) $latestAn
               <div class="mb-3"><div class="d-flex justify-content-between small mb-1"><span class="text-success fw-semibold">Have</span><span><?= $summary['Have'] ?></span></div><?= skillmap_percent_bar((int) round(($summary['Have'] / $resultTotal) * 100), 'success') ?></div>
               <div class="mb-3"><div class="d-flex justify-content-between small mb-1"><span class="text-warning fw-semibold">Partial</span><span><?= $summary['Partial'] ?></span></div><?= skillmap_percent_bar((int) round(($summary['Partial'] / $resultTotal) * 100), 'warning') ?></div>
               <div class="mb-4"><div class="d-flex justify-content-between small mb-1"><span class="text-danger fw-semibold">Missing</span><span><?= $summary['Missing'] ?></span></div><?= skillmap_percent_bar((int) round(($summary['Missing'] / $resultTotal) * 100), 'danger') ?></div>
-              <div style="height:220px"><canvas id="dashboardMatchChart"></canvas></div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="skillmap-chart-box skillmap-dashboard-chart"><canvas id="dashboardMatchChart"></canvas></div>
+                </div>
+                <div class="col-md-6">
+                  <?php if ($categoryReadiness === []): ?>
+                    <div class="alert alert-light border mb-0">Category readiness will appear after more skill data is available.</div>
+                  <?php else: ?>
+                    <div class="skillmap-chart-box skillmap-dashboard-chart"><canvas id="dashboardCategoryChart"></canvas></div>
+                  <?php endif; ?>
+                </div>
+              </div>
             <?php endif; ?>
           </div>
         </div>
@@ -265,6 +291,29 @@ $lastAnalysisDate = $latestAnalysis ? date('j M Y', strtotime((string) $latestAn
           datasets: [{ data: [<?= $summary['Have'] ?>, <?= $summary['Partial'] ?>, <?= $summary['Missing'] ?>], backgroundColor: ['#16a34a', '#eab308', '#dc2626'], borderWidth: 0 }]
         },
         options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    const dashboardCategoryCanvas = document.getElementById('dashboardCategoryChart');
+    if (dashboardCategoryCanvas && typeof Chart !== 'undefined') {
+      new Chart(dashboardCategoryCanvas, {
+        type: 'radar',
+        data: {
+          labels: <?= json_encode(array_column($categoryReadiness, 'name'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+          datasets: [{
+            label: 'Readiness',
+            data: <?= json_encode(array_map('intval', array_column($categoryReadiness, 'readiness')), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.14)',
+            pointBackgroundColor: '#2563eb'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { r: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } },
+          plugins: { legend: { position: 'bottom' } }
+        }
       });
     }
   </script>

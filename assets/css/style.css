@@ -1486,6 +1486,37 @@ body:has(.skillmap-admin-sidebar) .skillmap-notification-history {
   min-height: 260px;
 }
 
+.skillmap-chart-box-sm {
+  height: 300px;
+}
+
+.skillmap-dashboard-chart {
+  height: 240px;
+  min-height: 220px;
+}
+
+.skillmap-insight-card {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--sm-border);
+  border-radius: .85rem;
+  padding: 1.1rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
+}
+
+.skillmap-insight-icon {
+  width: 2.85rem;
+  height: 2.85rem;
+  border-radius: .75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 1.2rem;
+}
+
 @media (max-width: 991px) {
   .skillmap-right-rail {
     position: static;
