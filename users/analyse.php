@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($stmt->fetch()) {
         $_SESSION['target_role_id'] = $targetRoleId;
-        header('Location: /fyp_skillmapsystem/users/gap_analysis.php');
+        header('Location: /fyp_skillmapsystem/users/gap_analysis');
         exit;
     }
 
@@ -54,7 +54,7 @@ foreach ($roles as $role) {
         <h1 class="fw-bold mb-1">Choose Your Target Role</h1>
         <div class="text-muted">Select a career or leadership target for comparison</div>
       </div>
-      <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/skills_assessment.php">
+      <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/skills_assessment">
         <i class="bi bi-stars me-1"></i>Update Assessment
       </a>
     </div>

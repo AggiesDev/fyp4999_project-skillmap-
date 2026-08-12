@@ -165,7 +165,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
 $profile = profile_fetch_user($pdo, $userId);
 if (!$profile) {
-    header('Location: /fyp_skillmapsystem/logout.php');
+    header('Location: /fyp_skillmapsystem/logout');
     exit;
 }
 
@@ -191,7 +191,7 @@ $editCredential = profile_fetch_credential($pdo, $userId, (int) ($_GET['edit_cre
         <h1 class="fw-bold mb-1">My Profile</h1>
         <div class="text-muted">Manage your profile details separately from your skills and certifications.</div>
       </div>
-      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/skills_assessment.php">
+      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/skills_assessment">
         <i class="bi bi-stars me-1"></i>Skill Assessment
       </a>
     </div>
@@ -301,7 +301,7 @@ $editCredential = profile_fetch_credential($pdo, $userId, (int) ($_GET['edit_cre
                   <i class="bi <?= $editCredential ? 'bi-check2' : 'bi-plus-lg' ?> me-1"></i><?= $editCredential ? 'Update Credential' : 'Add Credential' ?>
                 </button>
                 <?php if ($editCredential): ?>
-                  <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/profile.php">Cancel Edit</a>
+                  <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/profile">Cancel Edit</a>
                 <?php endif; ?>
               </div>
             </form>
@@ -335,7 +335,7 @@ $editCredential = profile_fetch_credential($pdo, $userId, (int) ($_GET['edit_cre
                         <td><?= htmlspecialchars((string) ($credential['earned_at'] ?: '-'), ENT_QUOTES, 'UTF-8') ?></td>
                         <td>
                           <div class="d-flex justify-content-end gap-2">
-                            <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/users/profile.php?edit_credential=<?= (int) $credential['id'] ?>" title="Edit">
+                            <a class="btn btn-sm btn-outline-primary" href="/fyp_skillmapsystem/users/profile?edit_credential=<?= (int) $credential['id'] ?>" title="Edit">
                               <i class="bi bi-pencil"></i>
                             </a>
                             <form method="post">

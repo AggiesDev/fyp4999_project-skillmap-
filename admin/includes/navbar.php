@@ -7,14 +7,14 @@ $userRole = $user['role'] ?? 'admin';
 $roleLabel = ucwords(str_replace('_', ' ', (string) $userRole));
 $brandHref = skillmap_default_destination($user);
 $navItems = [
-  ['permission' => 'view_admin_dashboard', 'page' => 'analytics', 'href' => '/fyp_skillmapsystem/admin/analytics.php', 'label' => 'Analytics', 'icon' => 'bi-speedometer2'],
-  ['permission' => 'manage_skills', 'page' => 'categories', 'href' => '/fyp_skillmapsystem/admin/categories.php', 'label' => 'Categories', 'icon' => 'bi-tags'],
-  ['permission' => 'manage_skills', 'page' => 'skill_library', 'href' => '/fyp_skillmapsystem/admin/skill_library.php', 'label' => 'Skill Library', 'icon' => 'bi-journal-code'],
-  ['permission' => 'manage_roles', 'page' => 'benchmarks', 'href' => '/fyp_skillmapsystem/admin/benchmarks.php', 'label' => 'Benchmarks', 'icon' => 'bi-diagram-3'],
-  ['permission' => 'manage_users', 'page' => 'users', 'href' => '/fyp_skillmapsystem/admin/users.php', 'label' => 'Users', 'icon' => 'bi-people'],
-  ['permission' => 'review_student_skills', 'page' => 'reviews', 'href' => '/fyp_skillmapsystem/admin/reviews.php', 'label' => 'Student Reviews', 'icon' => 'bi-person-check'],
-  ['permission' => 'send_notifications', 'page' => 'notifications', 'href' => '/fyp_skillmapsystem/admin/notifications.php', 'label' => 'Notifications', 'icon' => 'bi-bell'],
-  ['permission' => 'manage_permissions', 'page' => 'permissions', 'href' => '/fyp_skillmapsystem/admin/permissions.php', 'label' => 'Permissions', 'icon' => 'bi-shield-lock'],
+  ['permission' => 'view_admin_dashboard', 'page' => 'analytics', 'href' => '/fyp_skillmapsystem/admin/analytics', 'label' => 'Analytics', 'icon' => 'bi-speedometer2'],
+  ['permission' => 'manage_skills', 'page' => 'categories', 'href' => '/fyp_skillmapsystem/admin/categories', 'label' => 'Categories', 'icon' => 'bi-tags'],
+  ['permission' => 'manage_skills', 'page' => 'skill_library', 'href' => '/fyp_skillmapsystem/admin/skill_library', 'label' => 'Skill Library', 'icon' => 'bi-journal-code'],
+  ['permission' => 'manage_roles', 'page' => 'benchmarks', 'href' => '/fyp_skillmapsystem/admin/benchmarks', 'label' => 'Benchmarks', 'icon' => 'bi-diagram-3'],
+  ['permission' => 'manage_users', 'page' => 'users', 'href' => '/fyp_skillmapsystem/admin/users', 'label' => 'Users', 'icon' => 'bi-people'],
+  ['permission' => 'review_student_skills', 'page' => 'reviews', 'href' => '/fyp_skillmapsystem/admin/reviews', 'label' => 'Student Reviews', 'icon' => 'bi-person-check'],
+  ['permission' => 'send_notifications', 'page' => 'notifications', 'href' => '/fyp_skillmapsystem/admin/notifications', 'label' => 'Notifications', 'icon' => 'bi-bell'],
+  ['permission' => 'manage_permissions', 'page' => 'permissions', 'href' => '/fyp_skillmapsystem/admin/permissions', 'label' => 'Permissions', 'icon' => 'bi-shield-lock'],
 ];
 $visibleNavItems = array_values(array_filter($navItems, static fn(array $item): bool => skillmap_user_can($item['permission'])));
 ?>
@@ -40,7 +40,7 @@ $visibleNavItems = array_values(array_filter($navItems, static fn(array $item): 
       </a>
     <?php endforeach; ?>
     <?php if ($visibleNavItems === []): ?>
-      <a class="skillmap-admin-menu-link" href="/fyp_skillmapsystem/users/dashboard.php">
+      <a class="skillmap-admin-menu-link" href="/fyp_skillmapsystem/users/dashboard">
         <i class="bi bi-grid-1x2"></i>
         <span>Student Dashboard</span>
       </a>
@@ -59,7 +59,7 @@ $visibleNavItems = array_values(array_filter($navItems, static fn(array $item): 
         <div class="small opacity-75"><?= htmlspecialchars($roleLabel, ENT_QUOTES, 'UTF-8') ?></div>
       </div>
     </div>
-    <a class="skillmap-admin-menu-link logout" href="/fyp_skillmapsystem/logout.php">
+    <a class="skillmap-admin-menu-link logout" href="/fyp_skillmapsystem/logout">
       <i class="bi bi-box-arrow-right"></i>
       <span>Logout</span>
     </a>

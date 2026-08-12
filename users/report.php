@@ -88,7 +88,7 @@ $generatedDate = date('j M Y');
       </div>
       <div class="d-flex flex-wrap gap-2">
         <?php if ($analysis): ?>
-          <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/report.php?format=csv"><i class="bi bi-filetype-csv me-1"></i>Download CSV</a>
+          <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/report?format=csv"><i class="bi bi-filetype-csv me-1"></i>Download CSV</a>
           <button class="btn btn-primary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print Report</button>
         <?php endif; ?>
       </div>
@@ -97,7 +97,7 @@ $generatedDate = date('j M Y');
     <?php if (!$analysis): ?>
       <div class="alert alert-light border">
         No report is available yet. Run a gap analysis first, then return here to print or export your results.
-        <a class="alert-link" href="/fyp_skillmapsystem/users/analyse.php">Start analysis</a>.
+        <a class="alert-link" href="/fyp_skillmapsystem/users/analyse">Start analysis</a>.
       </div>
     <?php else: ?>
       <div class="report-sheet bg-white border rounded-4 overflow-hidden">

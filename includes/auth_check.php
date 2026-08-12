@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user']) || !is_array($_SESSION['user'])) {
-    header('Location: /fyp_skillmapsystem/login.php');
+if (!current_user()) {
+    header('Location: /fyp_skillmapsystem/login');
     exit;
 }

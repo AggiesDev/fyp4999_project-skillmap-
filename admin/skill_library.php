@@ -103,7 +103,7 @@ if ($editId > 0) {
     $editSkill = $stmt->fetch() ?: null;
 }
 $showSkillForm = $editSkill || isset($_GET['new']) || ($error !== '' && $postAction === 'save_skill');
-$addSkillHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/skill_library.php' : '/fyp_skillmapsystem/admin/skill_library.php?new=1';
+$addSkillHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/skill_library' : '/fyp_skillmapsystem/admin/skill_library?new=1';
 
 $categories = $pdo->query('SELECT id, name, icon FROM skill_categories WHERE type = "Skill Category" ORDER BY name')->fetchAll();
 $skills = $pdo->query(
@@ -140,7 +140,7 @@ $skills = $pdo->query(
         <a class="btn btn-primary" href="<?= htmlspecialchars($addSkillHref, ENT_QUOTES, 'UTF-8') ?>">
           <i class="bi bi-plus-lg me-1"></i>Add Skill
         </a>
-        <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/categories.php">Manage Categories</a>
+        <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/categories">Manage Categories</a>
       </div>
     </div>
 
@@ -166,7 +166,7 @@ $skills = $pdo->query(
           </div>
           <div class="card-footer bg-white border-0 p-4 pt-0 d-flex gap-2">
             <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save Skill</button>
-            <?php if ($editSkill): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/skill_library.php">Cancel</a><?php else: ?><button class="btn btn-outline-secondary" type="button" data-toggle-panel="skillLibraryForm">Cancel</button><?php endif; ?>
+            <?php if ($editSkill): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/skill_library">Cancel</a><?php else: ?><button class="btn btn-outline-secondary" type="button" data-toggle-panel="skillLibraryForm">Cancel</button><?php endif; ?>
           </div>
         </form>
       </div>
@@ -193,7 +193,7 @@ $skills = $pdo->query(
                     <td><?= skillmap_status_badge($skill['status']) ?></td>
                     <td class="skillmap-actions-col">
                       <div class="d-flex gap-2">
-                        <?php $editSkillHref = $editId === (int) $skill['id'] ? '/fyp_skillmapsystem/admin/skill_library.php' : '/fyp_skillmapsystem/admin/skill_library.php?edit=' . (int) $skill['id']; ?>
+                        <?php $editSkillHref = $editId === (int) $skill['id'] ? '/fyp_skillmapsystem/admin/skill_library' : '/fyp_skillmapsystem/admin/skill_library?edit=' . (int) $skill['id']; ?>
                         <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($editSkillHref, ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-pencil"></i></a>
                         <form method="post">
                           <input type="hidden" name="action" value="delete_skill">

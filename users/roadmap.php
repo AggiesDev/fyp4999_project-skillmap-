@@ -200,7 +200,7 @@ $roadmapStatusItems = [
     <?php if (!$analysis): ?>
       <div class="alert alert-light border">
         Run a gap analysis first to generate your learning roadmap.
-        <a class="alert-link" href="/fyp_skillmapsystem/users/analyse.php">Choose a target role</a>.
+        <a class="alert-link" href="/fyp_skillmapsystem/users/analyse">Choose a target role</a>.
       </div>
     <?php elseif ($items === []): ?>
       <div class="alert alert-success">Your latest analysis has no missing or partial skills.</div>
@@ -298,7 +298,7 @@ $roadmapStatusItems = [
                 </div>
                 <hr>
                 <div class="small text-muted"><?= number_format($totalHours, 1) ?> hours estimated</div>
-                <a href="/fyp_skillmapsystem/users/analyse.php" class="btn btn-outline-primary btn-sm mt-3"><i class="bi bi-arrow-repeat me-1"></i>Switch Target Role</a>
+                <a href="/fyp_skillmapsystem/users/analyse" class="btn btn-outline-primary btn-sm mt-3"><i class="bi bi-arrow-repeat me-1"></i>Switch Target Role</a>
               </div>
             </div>
           </div>

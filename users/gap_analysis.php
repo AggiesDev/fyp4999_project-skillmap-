@@ -190,7 +190,7 @@ function gap_status_badge(string $status): string
         <h1 class="fw-bold mb-1">Gap Analysis Results</h1>
         <div class="text-muted"><?= $role ? htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') : 'No target role selected' ?></div>
       </div>
-      <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/analyse.php">
+      <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/analyse">
         <i class="bi bi-arrow-left me-1"></i>Change Role
       </a>
     </div>
@@ -199,7 +199,7 @@ function gap_status_badge(string $status): string
       <div class="alert alert-warning">
         <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
         <?php if (str_contains($error, 'assessment')): ?>
-          <a class="alert-link" href="/fyp_skillmapsystem/users/skills_assessment.php">Go to skill assessment</a>.
+          <a class="alert-link" href="/fyp_skillmapsystem/users/skills_assessment">Go to skill assessment</a>.
         <?php endif; ?>
       </div>
     <?php endif; ?>
@@ -265,8 +265,8 @@ function gap_status_badge(string $status): string
             </table>
           </div>
           <div class="d-flex flex-wrap gap-3 mt-2">
-            <a class="btn btn-success" href="/fyp_skillmapsystem/users/roadmap.php">View Learning Roadmap</a>
-            <a class="btn btn-danger" href="/fyp_skillmapsystem/users/report.php">Download PDF</a>
+            <a class="btn btn-success" href="/fyp_skillmapsystem/users/roadmap">View Learning Roadmap</a>
+            <a class="btn btn-danger" href="/fyp_skillmapsystem/users/report">Download PDF</a>
           </div>
         </div>
       </div>

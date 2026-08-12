@@ -60,7 +60,7 @@ foreach ($benchmarkRows as $row) {
         <h1 class="fw-bold mb-1">Skill Benchmarks</h1>
         <div class="text-muted">Review the required skills used by your gap analysis</div>
       </div>
-      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/analyse.php">
+      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/analyse">
         <i class="bi bi-search me-1"></i>Choose Target Role
       </a>
     </div>

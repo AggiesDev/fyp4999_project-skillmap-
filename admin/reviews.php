@@ -40,6 +40,9 @@ if (!$selectedStudent && $students !== []) {
     $selectedStudentId = (int) $selectedStudent['id'];
 }
 
+$filterProgrammes = array_values(array_unique(array_map(static fn(array $student): string => (string) $student['programme'], $students)));
+sort($filterProgrammes);
+
 $skills = [];
 $categoryStats = [];
 $ratingCounts = [0 => 0, 1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
@@ -103,7 +106,7 @@ $distributionValues = array_values($ratingCounts);
         <h1 class="fw-bold mb-1">Student Skill Reviews</h1>
         <div class="text-muted">Review student self-assessments, rating coverage, and skill readiness graphs.</div>
       </div>
-      <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/users.php"><i class="bi bi-people me-1"></i>Manage Students</a>
+      <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/users"><i class="bi bi-people me-1"></i>Manage Students</a>
     </div>
 
     <?php if ($message !== ''): ?>
@@ -122,10 +125,29 @@ $distributionValues = array_values($ratingCounts);
               <i class="bi bi-search"></i>
               <input class="form-control" type="search" placeholder="Search students" data-search-input>
             </div>
+            <div class="row g-2 mb-3">
+              <div class="col-sm-7 col-xl-12 col-xxl-7">
+                <label class="form-label small text-muted">Programme</label>
+                <select class="form-select form-select-sm" data-search-filter="programme">
+                  <option value="">All Programmes</option>
+                  <?php foreach ($filterProgrammes as $programme): ?>
+                    <option value="<?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-sm-5 col-xl-12 col-xxl-5">
+                <label class="form-label small text-muted">Status</label>
+                <select class="form-select form-select-sm" data-search-filter="status">
+                  <option value="">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
             <div class="skillmap-student-review-list">
               <?php foreach ($students as $student): ?>
                 <?php $isSelected = (int) $student['id'] === $selectedStudentId; ?>
-                <a class="skillmap-review-student <?= $isSelected ? 'active' : '' ?>" href="/fyp_skillmapsystem/admin/reviews.php?student_id=<?= (int) $student['id'] ?>" data-search-item data-search-text="<?= htmlspecialchars($student['name'] . ' ' . $student['email'] . ' ' . $student['programme'] . ' ' . $student['year_level'] . ' ' . $student['status'], ENT_QUOTES, 'UTF-8') ?>">
+                <a class="skillmap-review-student <?= $isSelected ? 'active' : '' ?>" href="/fyp_skillmapsystem/admin/reviews?student_id=<?= (int) $student['id'] ?>" data-search-item data-filter-programme="<?= htmlspecialchars($student['programme'], ENT_QUOTES, 'UTF-8') ?>" data-filter-status="<?= htmlspecialchars($student['status'], ENT_QUOTES, 'UTF-8') ?>" data-search-text="<?= htmlspecialchars($student['name'] . ' ' . $student['email'] . ' ' . $student['programme'] . ' ' . $student['year_level'] . ' ' . $student['status'], ENT_QUOTES, 'UTF-8') ?>">
                   <?php if (!empty($student['profile_icon'])): ?>
                     <img class="table-profile-icon" src="/fyp_skillmapsystem/<?= htmlspecialchars((string) $student['profile_icon'], ENT_QUOTES, 'UTF-8') ?>" alt="">
                   <?php else: ?>

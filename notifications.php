@@ -357,9 +357,9 @@ $isAdminNotificationPanel = in_array($userRole, ['admin', 'lecturer', 'staff'], 
                 <div class="d-flex justify-content-between"><span>Sent shown</span><strong><?= count($sentNotifications) ?></strong></div>
               <?php endif; ?>
               <?php if (($userRole === 'student')): ?>
-                <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/profile.php">Update Skill Profile</a>
+                <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/profile">Update Skill Profile</a>
               <?php else: ?>
-                <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/reviews.php">Review Students</a>
+                <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/reviews">Review Students</a>
               <?php endif; ?>
             </div>
           </div>

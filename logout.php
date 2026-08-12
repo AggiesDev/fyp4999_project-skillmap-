@@ -4,5 +4,5 @@
 require_once __DIR__ . '/includes/auth.php';
 
 logout();
-header('Location: /fyp_skillmapsystem/login.php');
+header('Location: /fyp_skillmapsystem/login');
 exit;

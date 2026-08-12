@@ -94,20 +94,22 @@ function set_authenticated_user(array $user): array
 
 function current_user(): ?array
 {
-    if (isset($_SESSION['user']) && is_array($_SESSION['user'])) {
-        return $_SESSION['user'];
-    }
-
-    if (!isset($_SESSION['user_id'])) {
+    $sessionUserId = (int) ($_SESSION['user_id'] ?? ($_SESSION['user']['id'] ?? 0));
+    if ($sessionUserId <= 0) {
         return null;
     }
 
     global $pdo;
     $stmt = $pdo->prepare('SELECT id, name, username, email, role, programme, year_level, avatar_initials, gender, profile_icon, status FROM users WHERE id = :id LIMIT 1');
-    $stmt->execute(['id' => (int) $_SESSION['user_id']]);
+    $stmt->execute(['id' => $sessionUserId]);
     $user = $stmt->fetch();
 
-    return $user ? set_authenticated_user($user) : null;
+    if (!$user || (string) $user['status'] !== 'Active') {
+        unset($_SESSION['user_id'], $_SESSION['role'], $_SESSION['name'], $_SESSION['avatar_initials'], $_SESSION['profile_icon'], $_SESSION['user']);
+        return null;
+    }
+
+    return set_authenticated_user($user);
 }
 
 function login(string $emailOrUsername, string $password): ?array
@@ -256,7 +258,7 @@ function logout(): void
 function require_login(): void
 {
     if (!current_user()) {
-        header('Location: /fyp_skillmapsystem/login.php');
+        header('Location: /fyp_skillmapsystem/login');
         exit;
     }
 }

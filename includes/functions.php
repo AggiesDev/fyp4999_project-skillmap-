@@ -178,6 +178,16 @@ function skillmap_bootstrap_database(): void
 
     skillmap_db_query('INSERT IGNORE INTO access_role_permissions (role_id, permission_id, enabled) VALUES ((SELECT id FROM access_roles WHERE name = ? LIMIT 1), (SELECT id FROM permissions WHERE name = ? LIMIT 1), 1)', 'ss', ['lecturer', 'send_notifications']);
     skillmap_db_query('INSERT IGNORE INTO access_role_permissions (role_id, permission_id, enabled) VALUES ((SELECT id FROM access_roles WHERE name = ? LIMIT 1), (SELECT id FROM permissions WHERE name = ? LIMIT 1), 1)', 'ss', ['staff', 'send_notifications']);
+    skillmap_db_query(
+        'DELETE arp
+         FROM access_role_permissions arp
+         INNER JOIN access_roles ar ON ar.id = arp.role_id
+         INNER JOIN permissions p ON p.id = arp.permission_id
+         WHERE (ar.name = ? AND p.name = ?)
+            OR (ar.name IN ("lecturer", "staff") AND p.name IN ("manage_users", "manage_permissions"))',
+        'ss',
+        ['student', 'view_admin_dashboard']
+    );
 
     $userCountResult = mysqli_query($conn, 'SELECT COUNT(*) AS total FROM users');
     $userCount = 0;
@@ -890,39 +900,58 @@ function skillmap_user_can(string $permissionName): bool
 
 function skillmap_require_permission(string $permissionName): void
 {
-    if (!skillmap_user_can($permissionName)) {
-        header('Location: /fyp_skillmapsystem/login.php');
+    if (!skillmap_current_user()) {
+        header('Location: /fyp_skillmapsystem/login');
         exit;
+    }
+
+    if (!skillmap_user_can($permissionName)) {
+        http_response_code(403);
+        exit('Access denied.');
+    }
+}
+
+function skillmap_require_admin(): void
+{
+    $user = skillmap_current_user();
+    if (!$user) {
+        header('Location: /fyp_skillmapsystem/login');
+        exit;
+    }
+
+    if (($user['role'] ?? '') !== 'admin') {
+        http_response_code(403);
+        exit('Access denied.');
     }
 }
 
 function skillmap_default_destination(array $user): string
 {
     if (($user['role'] ?? '') === 'admin' || skillmap_user_can('view_admin_dashboard')) {
-        return '/fyp_skillmapsystem/admin/analytics.php';
+        return '/fyp_skillmapsystem/admin/analytics';
     }
 
     if (skillmap_user_can('review_student_skills')) {
-        return '/fyp_skillmapsystem/admin/reviews.php';
+        return '/fyp_skillmapsystem/admin/reviews';
     }
 
     if (skillmap_user_can('manage_users')) {
-        return '/fyp_skillmapsystem/admin/users.php';
+        return '/fyp_skillmapsystem/admin/users';
     }
 
     if (skillmap_user_can('manage_skills')) {
-        return '/fyp_skillmapsystem/admin/skill_library.php';
+        return '/fyp_skillmapsystem/admin/skill_library';
     }
 
     if (skillmap_user_can('manage_roles')) {
-        return '/fyp_skillmapsystem/admin/benchmarks.php';
+        return '/fyp_skillmapsystem/admin/benchmarks';
     }
 
     if (skillmap_user_can('send_notifications')) {
-        return '/fyp_skillmapsystem/admin/notifications.php';
+        return '/fyp_skillmapsystem/admin/notifications';
     }
 
-    return '/fyp_skillmapsystem/users/dashboard.php';
+    return '/fyp_skillmapsystem/users/dashboard';
 }
 
 function skillmap_percent_bar(int $value, string $color = 'primary'): string

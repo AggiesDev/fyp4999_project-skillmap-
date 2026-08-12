@@ -1,5 +1,14 @@
 DirectoryIndex index.php
 Options -Indexes
+RewriteEngine On
+RewriteBase /fyp_skillmapsystem/
+
+RewriteCond %{THE_REQUEST} \s/+fyp_skillmapsystem/(.+?)\.php[?\s] [NC]
+RewriteRule ^(.+)\.php$ $1 [R=302,L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+?)/?$ $1.php [L,QSA]
 
 <FilesMatch "(\.sql|\.bak|\.env|composer\.(json|lock)|package(-lock)?\.json)$">
   Require all denied

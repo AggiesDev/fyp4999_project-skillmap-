@@ -2,6 +2,7 @@
 // Admin user management: create, edit, and activate/deactivate users.
 
 require_once __DIR__ . '/../includes/auth_check.php';
+skillmap_require_admin();
 skillmap_require_permission('manage_users');
 
 $activePage = 'users';
@@ -284,7 +285,7 @@ if ($editId > 0) {
     $editUser = $stmt->fetch() ?: null;
 }
 $showUserForm = $editUser || isset($_GET['new']) || ($error !== '' && $postAction === 'save_user');
-$addUserHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/users.php' : '/fyp_skillmapsystem/admin/users.php?new=1';
+$addUserHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/users' : '/fyp_skillmapsystem/admin/users?new=1';
 
 $users = $pdo->query(
     'SELECT u.id, u.name, u.username, u.email, u.role, u.programme, u.year_level, u.avatar_initials, u.gender, u.profile_icon, u.status, u.last_login_at,
@@ -305,6 +306,61 @@ $totalUsers = count($users);
 $activeUsers = count(array_filter($users, static fn(array $user): bool => $user['status'] === 'Active'));
 $studentCount = count(array_filter($users, static fn(array $user): bool => $user['role'] === 'student'));
 $avgBest = $totalUsers > 0 ? (int) round(array_sum(array_map(static fn(array $user): int => (int) $user['best_match'], $users)) / $totalUsers) : 0;
+$filterRoles = array_values(array_unique(array_map(static fn(array $user): string => (string) $user['role'], $users)));
+$filterProgrammes = array_values(array_unique(array_map(static fn(array $user): string => (string) $user['programme'], $users)));
+sort($filterRoles);
+sort($filterProgrammes);
+$roleChartData = [];
+$roleChartData['all'] = [
+    'label' => 'All Roles',
+    'total' => 0,
+    'active' => 0,
+    'inactive' => 0,
+    'avg_best' => 0,
+    'analyses' => 0,
+    'avg_streak' => 0,
+    'programmes' => [],
+    'status_counts' => ['Active' => 0, 'Inactive' => 0],
+];
+foreach ($filterRoles as $role) {
+    $roleChartData[$role] = [
+        'label' => ucwords(str_replace('_', ' ', $role)),
+        'total' => 0,
+        'active' => 0,
+        'inactive' => 0,
+        'avg_best' => 0,
+        'analyses' => 0,
+        'avg_streak' => 0,
+        'programmes' => [],
+        'status_counts' => ['Active' => 0, 'Inactive' => 0],
+    ];
+}
+foreach ($users as $userRow) {
+    $roleKey = (string) $userRow['role'];
+    foreach (['all', $roleKey] as $bucketKey) {
+        if (!isset($roleChartData[$bucketKey])) {
+            continue;
+        }
+        $programmeKey = (string) $userRow['programme'];
+        $statusKey = (string) $userRow['status'];
+        $roleChartData[$bucketKey]['total']++;
+        $roleChartData[$bucketKey]['active'] += $statusKey === 'Active' ? 1 : 0;
+        $roleChartData[$bucketKey]['inactive'] += $statusKey === 'Inactive' ? 1 : 0;
+        $roleChartData[$bucketKey]['avg_best'] += (int) $userRow['best_match'];
+        $roleChartData[$bucketKey]['analyses'] += (int) $userRow['analyses'];
+        $roleChartData[$bucketKey]['avg_streak'] += (int) $userRow['streak'];
+        $roleChartData[$bucketKey]['programmes'][$programmeKey] = ($roleChartData[$bucketKey]['programmes'][$programmeKey] ?? 0) + 1;
+        $roleChartData[$bucketKey]['status_counts'][$statusKey] = ($roleChartData[$bucketKey]['status_counts'][$statusKey] ?? 0) + 1;
+    }
+}
+foreach ($roleChartData as $key => $bucket) {
+    $bucketTotal = max((int) $bucket['total'], 1);
+    $roleChartData[$key]['avg_best'] = (int) round($bucket['avg_best'] / $bucketTotal);
+    $roleChartData[$key]['avg_streak'] = number_format((float) $bucket['avg_streak'] / $bucketTotal, 1, '.', '');
+    arsort($roleChartData[$key]['programmes']);
+    $roleChartData[$key]['programme_labels'] = array_keys($roleChartData[$key]['programmes']);
+    $roleChartData[$key]['programme_values'] = array_values($roleChartData[$key]['programmes']);
+}
 $pendingRequests = skillmap_pending_account_requests();
 $formOptions = admin_user_form_options($pdo);
 ?>
@@ -330,7 +386,7 @@ $formOptions = admin_user_form_options($pdo);
         <a class="btn btn-primary" href="<?= htmlspecialchars($addUserHref, ENT_QUOTES, 'UTF-8') ?>">
           <i class="bi bi-person-plus me-1"></i>Add New User
         </a>
-        <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/permissions.php">Manage Permissions</a>
+        <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/permissions">Manage Permissions</a>
       </div>
     </div>
 
@@ -476,26 +532,116 @@ $formOptions = admin_user_form_options($pdo);
           </div>
           <div class="card-footer bg-white border-0 p-4 pt-0 d-flex gap-2">
             <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save User</button>
-            <?php if ($editUser): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/users.php">Cancel</a><?php else: ?><button class="btn btn-outline-secondary" type="button" data-toggle-panel="adminUserForm">Cancel</button><?php endif; ?>
+            <?php if ($editUser): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/users">Cancel</a><?php else: ?><button class="btn btn-outline-secondary" type="button" data-toggle-panel="adminUserForm">Cancel</button><?php endif; ?>
           </div>
         </form>
       </div>
 
       <div class="col-xl-8 skillmap-admin-table-col">
-        <div class="card" data-search-scope>
+        <section class="card mb-4" id="adminUserChartsPanel">
           <div class="card-body p-3 p-lg-4">
-            <div class="skillmap-search">
-              <i class="bi bi-search"></i>
-              <input class="form-control" type="search" placeholder="Search users, roles, programme, email, or status" data-search-input>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+              <div>
+                <h2 class="h5 fw-bold mb-1">User Overview Charts</h2>
+                <div class="text-muted small">Visual summary generated from the current user records.</div>
+              </div>
+              <div class="d-flex flex-wrap align-items-end gap-2">
+                <div>
+                  <label class="form-label small text-muted">Chart Role</label>
+                  <select class="form-select form-select-sm" id="adminUserChartRole">
+                    <option value="all">All Roles</option>
+                    <?php foreach ($filterRoles as $role): ?>
+                      <option value="<?= htmlspecialchars($role, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $role)), ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle-panel="adminUserChartsBody">
+                  <i class="bi bi-eye me-1"></i>Show/Hide
+                </button>
+              </div>
+            </div>
+            <div id="adminUserChartsBody">
+              <div class="row g-3 mb-3">
+                <div class="col-md-6 col-xl-3"><div class="skillmap-insight-card h-100"><div class="skillmap-insight-icon text-bg-primary"><i class="bi bi-people"></i></div><div><div class="small text-muted">Users</div><div class="fs-4 fw-bold" data-user-chart-metric="total">0</div><div class="small text-muted" data-user-chart-label>All Roles</div></div></div></div>
+                <div class="col-md-6 col-xl-3"><div class="skillmap-insight-card h-100"><div class="skillmap-insight-icon text-bg-success"><i class="bi bi-person-check"></i></div><div><div class="small text-muted">Active</div><div class="fs-4 fw-bold" data-user-chart-metric="active">0</div><div class="small text-muted">Current usable accounts</div></div></div></div>
+                <div class="col-md-6 col-xl-3"><div class="skillmap-insight-card h-100"><div class="skillmap-insight-icon text-bg-warning"><i class="bi bi-graph-up"></i></div><div><div class="small text-muted">Avg Best Match</div><div class="fs-4 fw-bold"><span data-user-chart-metric="avg_best">0</span>%</div><div class="small text-muted">Based on analyses</div></div></div></div>
+                <div class="col-md-6 col-xl-3"><div class="skillmap-insight-card h-100"><div class="skillmap-insight-icon text-bg-info"><i class="bi bi-activity"></i></div><div><div class="small text-muted">Analyses</div><div class="fs-4 fw-bold" data-user-chart-metric="analyses">0</div><div class="small text-muted">Completed by users</div></div></div></div>
+              </div>
+              <div class="row g-4">
+                <div class="col-xl-7">
+                  <div class="border rounded-3 p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h3 class="h6 fw-bold mb-0">Programme / Department Distribution</h3>
+                      <span class="badge text-bg-light border" data-user-chart-programme-count>0 groups</span>
+                    </div>
+                    <div class="skillmap-chart-box skillmap-user-chart-box"><canvas id="adminUserProgrammeChart"></canvas></div>
+                  </div>
+                </div>
+                <div class="col-xl-5">
+                  <div class="border rounded-3 p-3 h-100">
+                    <h3 class="h6 fw-bold mb-2">Account Status Mix</h3>
+                    <div class="skillmap-chart-box skillmap-user-chart-box-sm"><canvas id="adminUserStatusChart"></canvas></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="card-body p-0">
+        </section>
+
+        <div class="card" data-search-scope id="adminUserTablePanel">
+          <div class="card-body p-3 p-lg-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+              <div>
+                <h2 class="h5 fw-bold mb-1">User Table</h2>
+                <div class="text-muted small">Search and filter individual user accounts.</div>
+              </div>
+              <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle-panel="adminUserTableBody">
+                <i class="bi bi-eye me-1"></i>Show/Hide
+              </button>
+            </div>
+            <div class="row g-3 align-items-end" id="adminUserTableFilters">
+              <div class="col-lg-5">
+                <label class="form-label small text-muted">Keyword</label>
+                <div class="skillmap-search">
+                  <i class="bi bi-search"></i>
+                  <input class="form-control" type="search" placeholder="Search name, username, email, or role" data-search-input>
+                </div>
+              </div>
+              <div class="col-sm-4 col-lg-2">
+                <label class="form-label small text-muted">Role</label>
+                <select class="form-select" data-search-filter="role">
+                  <option value="">All Roles</option>
+                  <?php foreach ($filterRoles as $role): ?>
+                    <option value="<?= htmlspecialchars($role, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $role)), ENT_QUOTES, 'UTF-8') ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-sm-4 col-lg-3">
+                <label class="form-label small text-muted">Programme</label>
+                <select class="form-select" data-search-filter="programme">
+                  <option value="">All Programmes</option>
+                  <?php foreach ($filterProgrammes as $programme): ?>
+                    <option value="<?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($programme, ENT_QUOTES, 'UTF-8') ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-sm-4 col-lg-2">
+                <label class="form-label small text-muted">Status</label>
+                <select class="form-select" data-search-filter="status">
+                  <option value="">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="card-body p-0" id="adminUserTableBody">
             <div class="table-responsive">
               <table class="table align-middle mb-0">
                 <thead><tr><th>User</th><th>Role</th><th>Programme</th><th>Last Login</th><th>Analyses</th><th>Best Match</th><th>Status</th><th class="skillmap-actions-col">Actions</th></tr></thead>
                 <tbody>
                   <?php foreach ($users as $row): ?>
-                    <tr data-search-item data-search-text="<?= htmlspecialchars($row['name'] . ' ' . $row['username'] . ' ' . $row['email'] . ' ' . $row['role'] . ' ' . $row['programme'] . ' ' . $row['year_level'] . ' ' . $row['status'] . ' ' . $row['top_role'], ENT_QUOTES, 'UTF-8') ?>">
+                    <tr data-search-item data-filter-role="<?= htmlspecialchars($row['role'], ENT_QUOTES, 'UTF-8') ?>" data-filter-programme="<?= htmlspecialchars($row['programme'], ENT_QUOTES, 'UTF-8') ?>" data-filter-status="<?= htmlspecialchars($row['status'], ENT_QUOTES, 'UTF-8') ?>" data-search-text="<?= htmlspecialchars($row['name'] . ' ' . $row['username'] . ' ' . $row['email'] . ' ' . $row['role'] . ' ' . $row['programme'] . ' ' . $row['year_level'] . ' ' . $row['status'] . ' ' . $row['top_role'], ENT_QUOTES, 'UTF-8') ?>">
                       <td><div class="d-flex align-items-center gap-3"><?php if (!empty($row['profile_icon'])): ?><img class="table-profile-icon bg-primary" src="/fyp_skillmapsystem/<?= htmlspecialchars($row['profile_icon'], ENT_QUOTES, 'UTF-8') ?>" alt=""><?php else: ?><div class="avatar-circle bg-primary"><?= htmlspecialchars($row['avatar_initials'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?><div><div class="fw-semibold"><?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?></div><div class="small text-muted"><?= htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($row['username'], ENT_QUOTES, 'UTF-8') ?></div></div></div></td>
                       <td><span class="badge text-bg-light border"><?= htmlspecialchars(ucfirst($row['role']), ENT_QUOTES, 'UTF-8') ?></span></td>
                       <td><?= htmlspecialchars($row['programme'], ENT_QUOTES, 'UTF-8') ?><div class="small text-muted"><?= htmlspecialchars($row['year_level'], ENT_QUOTES, 'UTF-8') ?></div></td>
@@ -505,9 +651,9 @@ $formOptions = admin_user_form_options($pdo);
                       <td><?= skillmap_status_badge($row['status']) ?></td>
                       <td class="skillmap-actions-col">
                         <div class="d-flex flex-wrap gap-2">
-                          <?php $editUserHref = $editId === (int) $row['id'] ? '/fyp_skillmapsystem/admin/users.php' : '/fyp_skillmapsystem/admin/users.php?edit=' . (int) $row['id']; ?>
+                          <?php $editUserHref = $editId === (int) $row['id'] ? '/fyp_skillmapsystem/admin/users' : '/fyp_skillmapsystem/admin/users?edit=' . (int) $row['id']; ?>
                           <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($editUserHref, ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-pencil"></i></a>
-                          <?php if ($row['role'] === 'student'): ?><a class="btn btn-sm btn-outline-secondary" href="/fyp_skillmapsystem/admin/reviews.php?student_id=<?= (int) $row['id'] ?>"><i class="bi bi-person-check"></i></a><?php endif; ?>
+                          <?php if ($row['role'] === 'student'): ?><a class="btn btn-sm btn-outline-secondary" href="/fyp_skillmapsystem/admin/reviews?student_id=<?= (int) $row['id'] ?>"><i class="bi bi-person-check"></i></a><?php endif; ?>
                           <form method="post">
                             <input type="hidden" name="action" value="toggle_status">
                             <input type="hidden" name="user_id" value="<?= (int) $row['id'] ?>">
@@ -532,8 +678,73 @@ $formOptions = admin_user_form_options($pdo);
     <?php require __DIR__ . '/../includes/footer.php'; ?>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>
   <script>
+    const adminUserChartData = <?= json_encode($roleChartData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+
+    if (typeof Chart !== 'undefined') {
+      const roleSelect = document.getElementById('adminUserChartRole');
+      const programmeCanvas = document.getElementById('adminUserProgrammeChart');
+      const statusCanvas = document.getElementById('adminUserStatusChart');
+      const metricNodes = document.querySelectorAll('[data-user-chart-metric]');
+      const labelNode = document.querySelector('[data-user-chart-label]');
+      const programmeCountNode = document.querySelector('[data-user-chart-programme-count]');
+
+      const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { usePointStyle: true, boxWidth: 10 } }
+        }
+      };
+
+      const programmeChart = programmeCanvas ? new Chart(programmeCanvas, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Users', data: [], backgroundColor: ['#2563eb', '#14b8a6', '#f59e0b', '#7c3aed', '#16a34a', '#dc2626'], borderRadius: 8 }] },
+        options: { ...chartDefaults, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
+      }) : null;
+
+      const statusChart = statusCanvas ? new Chart(statusCanvas, {
+        type: 'doughnut',
+        data: { labels: ['Active', 'Inactive'], datasets: [{ data: [0, 0], backgroundColor: ['#16a34a', '#64748b'], borderWidth: 0 }] },
+        options: { ...chartDefaults, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+      }) : null;
+
+      const renderUserCharts = () => {
+        const selected = roleSelect?.value || 'all';
+        const data = adminUserChartData[selected] || adminUserChartData.all;
+
+        metricNodes.forEach((node) => {
+          const metric = node.getAttribute('data-user-chart-metric') || '';
+          node.textContent = String(data[metric] ?? 0);
+        });
+        if (labelNode) {
+          labelNode.textContent = data.label || 'All Roles';
+        }
+        if (programmeCountNode) {
+          const count = (data.programme_labels || []).length;
+          programmeCountNode.textContent = `${count} group${count === 1 ? '' : 's'}`;
+        }
+
+        if (programmeChart) {
+          programmeChart.data.labels = data.programme_labels || [];
+          programmeChart.data.datasets[0].data = data.programme_values || [];
+          programmeChart.update();
+        }
+        if (statusChart) {
+          statusChart.data.datasets[0].data = [
+            Number(data.status_counts?.Active || 0),
+            Number(data.status_counts?.Inactive || 0)
+          ];
+          statusChart.update();
+        }
+      };
+
+      roleSelect?.addEventListener('change', renderUserCharts);
+      renderUserCharts();
+    }
+
     document.querySelectorAll('[data-other-select]').forEach((select) => {
       const target = document.getElementById(select.getAttribute('data-other-select'));
       const sync = () => {

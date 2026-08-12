@@ -230,8 +230,8 @@ foreach ($skillsByCategory as $category => $group) {
               <?= skillmap_progress_ring($completion) ?>
               <div class="small text-muted text-center mt-3"><?= $ratedCount ?> of <?= $totalCount ?> active skills rated</div>
                 <div class="d-grid gap-2 mt-4">
-                  <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/profile.php"><i class="bi bi-person me-1"></i>Profile</a>
-                  <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/analyse.php"><i class="bi bi-search me-1"></i>Choose Target Role</a>
+                  <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/users/profile"><i class="bi bi-person me-1"></i>Profile</a>
+                  <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/analyse"><i class="bi bi-search me-1"></i>Choose Target Role</a>
                 </div>
               </div>
             </div>

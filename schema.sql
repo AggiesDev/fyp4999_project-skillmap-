@@ -257,13 +257,6 @@ JOIN permissions p
 WHERE ar.name IN ('lecturer', 'staff') AND p.name IN ('view_admin_dashboard', 'review_student_skills', 'send_notifications')
 ON DUPLICATE KEY UPDATE enabled = VALUES(enabled);
 
-INSERT INTO access_role_permissions (role_id, permission_id, enabled)
-SELECT ar.id, p.id, 1
-FROM access_roles ar
-JOIN permissions p
-WHERE ar.name = 'student' AND p.name = 'view_admin_dashboard'
-ON DUPLICATE KEY UPDATE enabled = VALUES(enabled);
-
 INSERT INTO roles (name, type, description) VALUES
 ('Web Developer', 'Career', 'Build modern web applications using PHP and JavaScript'),
 ('Data Analyst', 'Career', 'Analyse data and communicate insights'),

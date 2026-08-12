@@ -2,6 +2,7 @@
 // Admin access control page for system roles and permissions.
 
 require_once __DIR__ . '/../includes/auth_check.php';
+skillmap_require_admin();
 skillmap_require_permission('manage_permissions');
 $activePage = 'permissions';
 $message = '';
@@ -119,7 +120,7 @@ foreach ($userPermissionRows as $row) {
         <h1 class="fw-bold mb-1">Permission Manager</h1>
         <div class="text-muted">Control access for admin, lecturer, staff, and future roles</div>
       </div>
-      <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/reviews.php">Review Students</a>
+      <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/reviews">Review Students</a>
     </div>
 
     <?php if ($message !== ''): ?>

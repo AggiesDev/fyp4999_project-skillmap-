@@ -83,7 +83,7 @@ $historyRows = array_reverse($history);
         <h1 class="fw-bold mb-1">My Progress</h1>
         <div class="text-muted">Track analysis results, learning activity, and earned achievements.</div>
       </div>
-      <a class="btn btn-primary" href="/fyp_skillmapsystem/users/analyse.php"><i class="bi bi-search me-1"></i>Run New Analysis</a>
+      <a class="btn btn-primary" href="/fyp_skillmapsystem/users/analyse"><i class="bi bi-search me-1"></i>Run New Analysis</a>
     </div>
 
     <div class="row g-4 mb-4">

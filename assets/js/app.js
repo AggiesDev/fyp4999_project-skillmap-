@@ -49,7 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('[data-skillmap-tab-panel]').forEach((panel) => {
         panel.classList.toggle('d-none', panel.getAttribute('data-skillmap-tab-panel') !== target);
       });
-      tabButtons.forEach((tab) => tab.classList.remove('active'));
+      tabButtons.forEach((tab) => {
+        tab.classList.remove('active');
+        tab.classList.add('bg-light', 'text-dark');
+      });
+      button.classList.remove('bg-light', 'text-dark');
       button.classList.add('active');
     });
   });
@@ -112,6 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!target) return;
       target.classList.toggle('d-none');
       syncAdminFormLayouts();
+      if (!target.classList.contains('d-none') && typeof Chart !== 'undefined') {
+        Object.values(Chart.instances || {}).forEach((chart) => chart.resize());
+      }
     });
   });
 
@@ -156,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyStateSelector = input.getAttribute('data-search-empty');
     const emptyState = emptyStateSelector ? document.querySelector(emptyStateSelector) : scope.querySelector('[data-search-empty]');
     const items = Array.from(scope.querySelectorAll('[data-search-item]'));
+    const filters = Array.from(scope.querySelectorAll('[data-search-filter]'));
 
     const applySearch = () => {
       const query = input.value.trim().toLowerCase();
@@ -163,19 +171,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
       items.forEach((item) => {
         const haystack = (item.getAttribute('data-search-text') || item.textContent || '').toLowerCase();
-        const isVisible = query === '' || haystack.includes(query);
+        const matchesQuery = query === '' || haystack.includes(query);
+        const matchesFilters = filters.every((filter) => {
+          const filterValue = (filter.value || '').trim().toLowerCase();
+          if (filterValue === '') return true;
+
+          const key = filter.getAttribute('data-search-filter') || '';
+          const itemValue = (item.getAttribute(`data-filter-${key}`) || '').trim().toLowerCase();
+          return itemValue === filterValue;
+        });
+        const isVisible = matchesQuery && matchesFilters;
         item.classList.toggle('d-none', !isVisible);
         if (isVisible) visibleCount += 1;
       });
 
       if (emptyState) {
-        emptyState.classList.toggle('d-none', visibleCount > 0 || query === '');
+        const hasActiveFilter = filters.some((filter) => (filter.value || '').trim() !== '');
+        emptyState.classList.toggle('d-none', visibleCount > 0 || (query === '' && !hasActiveFilter));
       }
 
       document.dispatchEvent(new CustomEvent('skillmap:table-visibility-change'));
     };
 
     input.addEventListener('input', applySearch);
+    filters.forEach((filter) => filter.addEventListener('change', applySearch));
     applySearch();
   });
 

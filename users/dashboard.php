@@ -133,8 +133,8 @@ $lastAnalysisDate = $latestAnalysis ? date('j M Y', strtotime((string) $latestAn
         </div>
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/skills_assessment.php"><i class="bi bi-stars me-1"></i>Update Assessment</a>
-        <a class="btn btn-primary" href="/fyp_skillmapsystem/users/analyse.php"><i class="bi bi-search me-1"></i>New Analysis</a>
+        <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/users/skills_assessment"><i class="bi bi-stars me-1"></i>Update Assessment</a>
+        <a class="btn btn-primary" href="/fyp_skillmapsystem/users/analyse"><i class="bi bi-search me-1"></i>New Analysis</a>
       </div>
     </div>
 
@@ -144,7 +144,7 @@ $lastAnalysisDate = $latestAnalysis ? date('j M Y', strtotime((string) $latestAn
           <div class="fw-semibold">No gap analysis yet</div>
           <div class="small text-muted">Complete your assessment, then choose a target role to generate your roadmap and report.</div>
         </div>
-        <a class="btn btn-primary btn-sm" href="/fyp_skillmapsystem/users/analyse.php">Start Analysis</a>
+        <a class="btn btn-primary btn-sm" href="/fyp_skillmapsystem/users/analyse">Start Analysis</a>
       </div>
     <?php endif; ?>
 
@@ -185,7 +185,7 @@ $lastAnalysisDate = $latestAnalysis ? date('j M Y', strtotime((string) $latestAn
           <div class="card-body p-4">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
               <h2 class="h5 fw-bold mb-0">Current Skill Breakdown</h2>
-              <a class="link-primary text-decoration-none" href="/fyp_skillmapsystem/users/gap_analysis.php">View Results</a>
+              <a class="link-primary text-decoration-none" href="/fyp_skillmapsystem/users/gap_analysis">View Results</a>
             </div>
             <?php if (!$latestAnalysis): ?>
               <div class="text-center text-muted py-5">Your skill breakdown will appear after your first analysis.</div>
@@ -231,7 +231,7 @@ $lastAnalysisDate = $latestAnalysis ? date('j M Y', strtotime((string) $latestAn
                 <?php endforeach; ?>
               </div>
             <?php endif; ?>
-            <a class="btn btn-outline-primary w-100 mt-3" href="/fyp_skillmapsystem/users/roadmap.php">Open Roadmap</a>
+            <a class="btn btn-outline-primary w-100 mt-3" href="/fyp_skillmapsystem/users/roadmap">Open Roadmap</a>
           </div>
         </div>
       </div>

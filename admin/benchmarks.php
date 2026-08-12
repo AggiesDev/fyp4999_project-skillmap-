@@ -139,7 +139,7 @@ if (!$selectedRole && $roles !== []) {
 }
 $roleFormRole = isset($_GET['new']) ? null : $selectedRole;
 $showRoleForm = isset($_GET['edit_role']) || isset($_GET['new']);
-$newRoleHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/benchmarks.php?role_id=' . (int) $selectedRoleId : '/fyp_skillmapsystem/admin/benchmarks.php?new=1';
+$newRoleHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/benchmarks?role_id=' . (int) $selectedRoleId : '/fyp_skillmapsystem/admin/benchmarks?new=1';
 
 $benchmarks = [];
 if ($selectedRoleId > 0) {
@@ -181,7 +181,7 @@ $skills = $pdo->query(
         <h1 class="fw-bold mb-1">Benchmark Manager</h1>
         <div class="text-muted">Maintain target roles and required skill ratings</div>
       </div>
-      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/skill_library.php">Skill Library</a>
+      <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/skill_library">Skill Library</a>
     </div>
 
     <?php if ($message !== ''): ?><div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
@@ -202,7 +202,7 @@ $skills = $pdo->query(
             <div class="skillmap-role-scroll">
               <?php foreach ($roles as $role): ?>
                 <div class="skillmap-role-list-item <?= (int) $role['id'] === $selectedRoleId ? 'active' : '' ?>" data-search-item data-search-text="<?= htmlspecialchars($role['name'] . ' ' . $role['type'] . ' ' . $role['description'], ENT_QUOTES, 'UTF-8') ?>">
-                  <a class="skillmap-role-list-main" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $role['id'] ?>">
+                  <a class="skillmap-role-list-main" href="/fyp_skillmapsystem/admin/benchmarks?role_id=<?= (int) $role['id'] ?>">
                     <div class="d-flex justify-content-between gap-2">
                       <span class="fw-semibold text-truncate"><?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?></span>
                       <span class="badge text-bg-light border"><?= htmlspecialchars($role['type'], ENT_QUOTES, 'UTF-8') ?></span>
@@ -210,7 +210,7 @@ $skills = $pdo->query(
                     <div class="small opacity-75"><?= (int) $role['skills'] ?> skills · <?= (float) $role['avg_required'] ?> avg</div>
                   </a>
                   <div class="skillmap-role-list-actions">
-                    <?php $editRoleHref = $showRoleForm && !isset($_GET['new']) && (int) $role['id'] === $selectedRoleId ? '/fyp_skillmapsystem/admin/benchmarks.php?role_id=' . (int) $role['id'] : '/fyp_skillmapsystem/admin/benchmarks.php?role_id=' . (int) $role['id'] . '&edit_role=1'; ?>
+                    <?php $editRoleHref = $showRoleForm && !isset($_GET['new']) && (int) $role['id'] === $selectedRoleId ? '/fyp_skillmapsystem/admin/benchmarks?role_id=' . (int) $role['id'] : '/fyp_skillmapsystem/admin/benchmarks?role_id=' . (int) $role['id'] . '&edit_role=1'; ?>
                     <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($editRoleHref, ENT_QUOTES, 'UTF-8') ?>" title="Edit role" aria-label="Edit <?= htmlspecialchars($role['name'], ENT_QUOTES, 'UTF-8') ?>">
                       <i class="bi bi-pencil"></i>
                     </a>
@@ -246,8 +246,8 @@ $skills = $pdo->query(
           </div>
           <div class="card-footer bg-white border-0 p-4 pt-0 d-flex flex-wrap gap-2">
             <button class="btn btn-primary" type="submit">Save Role</button>
-            <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/benchmarks.php?new=1">New</a>
-            <?php if ($showRoleForm): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/benchmarks.php?role_id=<?= (int) $selectedRoleId ?>">Cancel</a><?php endif; ?>
+            <a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/benchmarks?new=1">New</a>
+            <?php if ($showRoleForm): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/benchmarks?role_id=<?= (int) $selectedRoleId ?>">Cancel</a><?php endif; ?>
           </div>
         </form>
 

@@ -66,7 +66,7 @@ if ($editId > 0) {
     $editCategory = $stmt->fetch() ?: null;
 }
 $showCategoryForm = $editCategory || isset($_GET['new']) || ($error !== '' && $postAction === 'save_category');
-$addCategoryHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/categories.php' : '/fyp_skillmapsystem/admin/categories.php?new=1';
+$addCategoryHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/categories' : '/fyp_skillmapsystem/admin/categories?new=1';
 
 $categories = $pdo->query(
     'SELECT sc.id, sc.name, sc.type, sc.icon, DATE_FORMAT(sc.updated_at, "%e %b %Y") AS updated,
@@ -99,7 +99,7 @@ $categories = $pdo->query(
         <a class="btn btn-primary" href="<?= htmlspecialchars($addCategoryHref, ENT_QUOTES, 'UTF-8') ?>">
           <i class="bi bi-plus-lg me-1"></i>Add Category
         </a>
-        <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks.php">Role Benchmarks</a>
+        <a class="btn btn-outline-primary" href="/fyp_skillmapsystem/admin/benchmarks">Role Benchmarks</a>
       </div>
     </div>
 
@@ -121,7 +121,7 @@ $categories = $pdo->query(
           </div>
           <div class="card-footer bg-white border-0 p-4 pt-0 d-flex gap-2">
             <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save Category</button>
-            <?php if ($editCategory): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/categories.php">Cancel</a><?php else: ?><button class="btn btn-outline-secondary" type="button" data-toggle-panel="categoryForm">Cancel</button><?php endif; ?>
+            <?php if ($editCategory): ?><a class="btn btn-outline-secondary" href="/fyp_skillmapsystem/admin/categories">Cancel</a><?php else: ?><button class="btn btn-outline-secondary" type="button" data-toggle-panel="categoryForm">Cancel</button><?php endif; ?>
           </div>
         </form>
       </div>
@@ -148,7 +148,7 @@ $categories = $pdo->query(
                     <td><?= htmlspecialchars($category['updated'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td class="skillmap-actions-col">
                       <div class="d-flex gap-2">
-                        <?php $editCategoryHref = $editId === (int) $category['id'] ? '/fyp_skillmapsystem/admin/categories.php' : '/fyp_skillmapsystem/admin/categories.php?edit=' . (int) $category['id']; ?>
+                        <?php $editCategoryHref = $editId === (int) $category['id'] ? '/fyp_skillmapsystem/admin/categories' : '/fyp_skillmapsystem/admin/categories?edit=' . (int) $category['id']; ?>
                         <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($editCategoryHref, ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-pencil"></i></a>
                         <form method="post">
                           <input type="hidden" name="action" value="delete_category">
