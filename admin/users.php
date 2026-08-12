@@ -393,13 +393,6 @@ $formOptions = admin_user_form_options($pdo);
     <?php if ($message !== ''): ?><div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
     <?php if ($error !== ''): ?><div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
-    <div class="row g-3 mb-4">
-      <div class="col-md-6 col-xl-3"><div class="card"><div class="card-body"><div class="text-muted small">Total Users</div><div class="fs-3 fw-bold"><?= $totalUsers ?></div></div></div></div>
-      <div class="col-md-6 col-xl-3"><div class="card"><div class="card-body"><div class="text-muted small">Active Users</div><div class="fs-3 fw-bold"><?= $activeUsers ?></div></div></div></div>
-      <div class="col-md-6 col-xl-3"><div class="card"><div class="card-body"><div class="text-muted small">Students</div><div class="fs-3 fw-bold"><?= $studentCount ?></div></div></div></div>
-      <div class="col-md-6 col-xl-3"><div class="card"><div class="card-body"><div class="text-muted small">Avg Best Match</div><div class="fs-3 fw-bold"><?= $avgBest ?>%</div></div></div></div>
-    </div>
-
     <div class="row g-4">
       <div class="col-xl-4 skillmap-admin-form-side">
         <?php if ($pendingRequests !== []): ?>

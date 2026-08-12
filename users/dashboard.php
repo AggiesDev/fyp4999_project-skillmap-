@@ -84,7 +84,7 @@ if ($latestAnalysis) {
 }
 
 $historyStmt = $pdo->prepare(
-    'SELECT cr.name AS role_name, ROUND(a.match_score) AS match_score, DATE_FORMAT(a.created_at, "%e %b %Y") AS created_at
+    'SELECT cr.name AS role_name, ROUND(a.match_score) AS match_score, a.ai_summary, DATE_FORMAT(a.created_at, "%e %b %Y") AS created_at
      FROM analyses a
      INNER JOIN career_roles cr ON cr.id = a.target_role_id
      WHERE a.user_id = :user_id
@@ -245,10 +245,15 @@ $lastAnalysisDate = $latestAnalysis ? date('j M Y', strtotime((string) $latestAn
             <div class="text-muted small">No analysis history yet.</div>
           <?php else: ?>
             <div class="table-responsive"><table class="table align-middle mb-0">
-              <thead><tr><th>Date</th><th>Target Role</th><th>Match</th></tr></thead>
+              <thead><tr><th>Date</th><th>Target Role</th><th>Match</th><th>Recommendation Summary</th></tr></thead>
               <tbody>
                 <?php foreach ($recentAnalyses as $row): ?>
-                  <tr><td><?= htmlspecialchars((string) $row['created_at'], ENT_QUOTES, 'UTF-8') ?></td><td class="fw-semibold"><?= htmlspecialchars((string) $row['role_name'], ENT_QUOTES, 'UTF-8') ?></td><td><?= (int) $row['match_score'] ?>%</td></tr>
+                  <tr>
+                    <td><?= htmlspecialchars((string) $row['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td class="fw-semibold"><?= htmlspecialchars((string) $row['role_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= (int) $row['match_score'] ?>%</td>
+                    <td class="text-muted small"><?= htmlspecialchars((string) $row['ai_summary'], ENT_QUOTES, 'UTF-8') ?></td>
+                  </tr>
                 <?php endforeach; ?>
               </tbody>
             </table></div>

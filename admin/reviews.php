@@ -7,6 +7,18 @@ skillmap_require_permission('review_student_skills');
 $activePage = 'reviews';
 $message = '';
 
+function admin_student_analysis_summary(string $summary): string
+{
+    $summary = preg_replace('/\bYou match\b/', 'Student matches', $summary) ?? $summary;
+    $summary = preg_replace('/\byou match\b/', 'student matches', $summary) ?? $summary;
+    $summary = preg_replace('/\bYou\b/', 'Student', $summary) ?? $summary;
+    $summary = preg_replace('/\byou\b/', 'student', $summary) ?? $summary;
+    $summary = preg_replace('/\bYour\b/', 'Student\'s', $summary) ?? $summary;
+    $summary = preg_replace('/\byour\b/', 'student\'s', $summary) ?? $summary;
+
+    return $summary;
+}
+
 $students = skillmap_fetch_all(
     'SELECT u.id, u.name, u.email, u.programme, u.year_level, u.avatar_initials, u.profile_icon, u.status,
             COALESCE((SELECT COUNT(*) FROM user_skill_ratings r WHERE r.user_id = u.id), 0) AS rated_skills,
@@ -44,6 +56,7 @@ $filterProgrammes = array_values(array_unique(array_map(static fn(array $student
 sort($filterProgrammes);
 
 $skills = [];
+$analysisHistory = [];
 $categoryStats = [];
 $ratingCounts = [0 => 0, 1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
 $averageRating = 0;
@@ -51,6 +64,24 @@ $ratedCount = 0;
 $totalSkillCount = 0;
 
 if ($selectedStudentId > 0) {
+    $analysisHistory = skillmap_fetch_all(
+        'SELECT a.id, a.match_score, a.ai_summary, a.created_at,
+                cr.name AS role_name, cr.type AS role_type,
+                COALESCE(SUM(ar.status = "Have"), 0) AS have_count,
+                COALESCE(SUM(ar.status = "Partial"), 0) AS partial_count,
+                COALESCE(SUM(ar.status = "Missing"), 0) AS missing_count,
+                COUNT(ar.id) AS result_count
+         FROM analyses a
+         INNER JOIN career_roles cr ON cr.id = a.target_role_id
+         LEFT JOIN analysis_results ar ON ar.analysis_id = a.id
+         WHERE a.user_id = ?
+         GROUP BY a.id
+         ORDER BY a.created_at DESC
+         LIMIT 20',
+        'i',
+        [$selectedStudentId]
+    );
+
     $skillRows = skillmap_fetch_all(
         'SELECT s.id AS skill_id, c.name AS category, c.icon, s.name, s.description, COALESCE(r.rating, 0) AS score
          FROM skills s
@@ -230,6 +261,59 @@ $distributionValues = array_values($ratingCounts);
               </div>
             </div>
           </div>
+
+          <section class="card mb-4">
+            <div class="card-body p-4">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                  <h2 class="h5 fw-bold mb-1">Analysis History</h2>
+                  <div class="text-muted small">Previous career and leadership role analyses for the selected student.</div>
+                </div>
+                <span class="badge text-bg-light border"><?= count($analysisHistory) ?> record<?= count($analysisHistory) === 1 ? '' : 's' ?></span>
+              </div>
+
+              <?php if ($analysisHistory === []): ?>
+                <div class="alert alert-light border mb-0">No gap analysis history is available for this student yet.</div>
+              <?php else: ?>
+                <div class="table-responsive">
+                  <table class="table align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Target Role</th>
+                        <th>Match</th>
+                        <th>Skill Result</th>
+                        <th>Recommendation Summary</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php foreach ($analysisHistory as $history): ?>
+                        <?php $matchScore = (int) round((float) $history['match_score']); ?>
+                        <tr>
+                          <td><?= htmlspecialchars(date('j M Y, g:i A', strtotime((string) $history['created_at'])), ENT_QUOTES, 'UTF-8') ?></td>
+                          <td>
+                            <div class="fw-semibold"><?= htmlspecialchars((string) $history['role_name'], ENT_QUOTES, 'UTF-8') ?></div>
+                            <span class="badge text-bg-light border"><?= htmlspecialchars((string) $history['role_type'], ENT_QUOTES, 'UTF-8') ?></span>
+                          </td>
+                          <td>
+                            <span class="badge <?= $matchScore >= 80 ? 'text-bg-success' : ($matchScore >= 60 ? 'text-bg-warning' : 'text-bg-danger') ?>"><?= $matchScore ?>%</span>
+                          </td>
+                          <td>
+                            <div class="d-flex flex-wrap gap-1">
+                              <span class="badge text-bg-success"><?= (int) $history['have_count'] ?> Have</span>
+                              <span class="badge text-bg-warning"><?= (int) $history['partial_count'] ?> Partial</span>
+                              <span class="badge text-bg-danger"><?= (int) $history['missing_count'] ?> Missing</span>
+                            </div>
+                          </td>
+                          <td class="text-muted small"><?= htmlspecialchars(admin_student_analysis_summary((string) $history['ai_summary']), ENT_QUOTES, 'UTF-8') ?></td>
+                        </tr>
+                      <?php endforeach; ?>
+                    </tbody>
+                  </table>
+                </div>
+              <?php endif; ?>
+            </div>
+          </section>
 
           <form method="post" class="card" data-search-scope>
             <div class="card-body p-4">

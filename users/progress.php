@@ -9,7 +9,7 @@ $user = skillmap_current_user();
 $userId = (int) ($user['id'] ?? 0);
 
 $historyStmt = $pdo->prepare(
-    'SELECT a.id, a.match_score, a.created_at, cr.name AS role_name
+    'SELECT a.id, a.match_score, a.ai_summary, a.created_at, cr.name AS role_name
      FROM analyses a
      INNER JOIN career_roles cr ON cr.id = a.target_role_id
      WHERE a.user_id = :user_id
@@ -151,13 +151,14 @@ $historyRows = array_reverse($history);
             <div class="text-muted small">No analysis history yet.</div>
           <?php else: ?>
             <div class="table-responsive"><table class="table align-middle mb-0">
-              <thead><tr><th>Date</th><th>Target Role</th><th>Score</th></tr></thead>
+              <thead><tr><th>Date</th><th>Target Role</th><th>Score</th><th>Recommendation Summary</th></tr></thead>
               <tbody>
                 <?php foreach ($historyRows as $row): ?>
                   <tr>
                     <td><?= htmlspecialchars(date('j M Y', strtotime((string) $row['created_at'])), ENT_QUOTES, 'UTF-8') ?></td>
                     <td class="fw-semibold"><?= htmlspecialchars((string) $row['role_name'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= (int) round((float) $row['match_score']) ?>%</td>
+                    <td class="text-muted small"><?= htmlspecialchars((string) $row['ai_summary'], ENT_QUOTES, 'UTF-8') ?></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
