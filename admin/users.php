@@ -46,6 +46,26 @@ function admin_render_profile_icon_choices(string $selectedIcon): void
     }
 }
 
+function admin_user_sort_header(string $key, string $label, string $activeSort, string $activeDirection): string
+{
+    $nextDirection = ($activeSort === $key && $activeDirection === 'asc') ? 'desc' : 'asc';
+    $query = $_GET;
+    unset($query['edit'], $query['new']);
+    $query['sort'] = $key;
+    $query['order'] = $nextDirection;
+    $href = '/fyp_skillmapsystem/admin/users?' . http_build_query($query);
+    $icon = 'bi-chevron-expand';
+    $activeClass = '';
+
+    if ($activeSort === $key) {
+        $icon = $activeDirection === 'asc' ? 'bi-chevron-up' : 'bi-chevron-down';
+        $activeClass = ' active';
+    }
+
+    return '<a class="skillmap-sort-link' . $activeClass . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" aria-label="Sort by ' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">' .
+        '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><i class="skillmap-sort-icon bi ' . $icon . '"></i></a>';
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
     $postAction = $action;
@@ -286,6 +306,42 @@ if ($editId > 0) {
 }
 $showUserForm = $editUser || isset($_GET['new']) || ($error !== '' && $postAction === 'save_user');
 $addUserHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/users' : '/fyp_skillmapsystem/admin/users?new=1';
+$allowedUserSorts = [
+    'user' => [
+        'asc' => 'u.name ASC, u.email ASC',
+        'desc' => 'u.name DESC, u.email DESC',
+    ],
+    'role' => [
+        'asc' => 'u.role ASC, u.name ASC',
+        'desc' => 'u.role DESC, u.name ASC',
+    ],
+    'programme' => [
+        'asc' => 'u.programme ASC, u.year_level ASC, u.name ASC',
+        'desc' => 'u.programme DESC, u.year_level DESC, u.name ASC',
+    ],
+    'last_login' => [
+        'asc' => 'u.last_login_at IS NULL ASC, u.last_login_at ASC, u.name ASC',
+        'desc' => 'u.last_login_at IS NULL ASC, u.last_login_at DESC, u.name ASC',
+    ],
+    'analyses' => [
+        'asc' => 'analyses ASC, u.name ASC',
+        'desc' => 'analyses DESC, u.name ASC',
+    ],
+    'best_match' => [
+        'asc' => 'best_match ASC, u.name ASC',
+        'desc' => 'best_match DESC, u.name ASC',
+    ],
+    'status' => [
+        'asc' => 'u.status ASC, u.name ASC',
+        'desc' => 'u.status DESC, u.name ASC',
+    ],
+];
+$userSort = (string) ($_GET['sort'] ?? 'last_login');
+$userSortDirection = strtolower((string) ($_GET['order'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+if (!isset($allowedUserSorts[$userSort])) {
+    $userSort = 'last_login';
+}
+$userOrderBy = $allowedUserSorts[$userSort][$userSortDirection] . ', u.created_at DESC';
 
 $users = $pdo->query(
     'SELECT u.id, u.name, u.username, u.email, u.role, u.programme, u.year_level, u.avatar_initials, u.gender, u.profile_icon, u.status, u.last_login_at,
@@ -299,7 +355,7 @@ $users = $pdo->query(
      LEFT JOIN analyses a ON a.user_id = u.id
      WHERE u.role <> "admin"
      GROUP BY u.id
-     ORDER BY u.created_at DESC'
+     ORDER BY ' . $userOrderBy
 )->fetchAll();
 
 $totalUsers = count($users);
@@ -631,7 +687,18 @@ $formOptions = admin_user_form_options($pdo);
           <div class="card-body p-0" id="adminUserTableBody">
             <div class="table-responsive">
               <table class="table align-middle mb-0">
-                <thead><tr><th>User</th><th>Role</th><th>Programme</th><th>Last Login</th><th>Analyses</th><th>Best Match</th><th>Status</th><th class="skillmap-actions-col">Actions</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th><?= admin_user_sort_header('user', 'User', $userSort, $userSortDirection) ?></th>
+                    <th><?= admin_user_sort_header('role', 'Role', $userSort, $userSortDirection) ?></th>
+                    <th><?= admin_user_sort_header('programme', 'Programme', $userSort, $userSortDirection) ?></th>
+                    <th><?= admin_user_sort_header('last_login', 'Last Login', $userSort, $userSortDirection) ?></th>
+                    <th><?= admin_user_sort_header('analyses', 'Analyses', $userSort, $userSortDirection) ?></th>
+                    <th><?= admin_user_sort_header('best_match', 'Best Match', $userSort, $userSortDirection) ?></th>
+                    <th><?= admin_user_sort_header('status', 'Status', $userSort, $userSortDirection) ?></th>
+                    <th class="skillmap-actions-col">Actions</th>
+                  </tr>
+                </thead>
                 <tbody>
                   <?php foreach ($users as $row): ?>
                     <tr data-search-item data-filter-role="<?= htmlspecialchars($row['role'], ENT_QUOTES, 'UTF-8') ?>" data-filter-programme="<?= htmlspecialchars($row['programme'], ENT_QUOTES, 'UTF-8') ?>" data-filter-status="<?= htmlspecialchars($row['status'], ENT_QUOTES, 'UTF-8') ?>" data-search-text="<?= htmlspecialchars($row['name'] . ' ' . $row['username'] . ' ' . $row['email'] . ' ' . $row['role'] . ' ' . $row['programme'] . ' ' . $row['year_level'] . ' ' . $row['status'] . ' ' . $row['top_role'], ENT_QUOTES, 'UTF-8') ?>">

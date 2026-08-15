@@ -705,6 +705,46 @@ body:has(.skillmap-admin-sidebar) .table thead th {
   background: #fff;
 }
 
+body:has(.skillmap-admin-sidebar) .table thead th .skillmap-sort-link,
+body:has(.skillmap-admin-sidebar) .table thead th .skillmap-sort-link:visited {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  gap: .3rem;
+  margin: -.2rem -.35rem;
+  padding: .2rem .35rem;
+  border-radius: .45rem;
+  color: #475569;
+  text-decoration: none !important;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+body:has(.skillmap-admin-sidebar) .table thead th .skillmap-sort-icon {
+  width: 1rem;
+  min-width: 1rem;
+  color: #94a3b8;
+  font-size: .82rem;
+  text-align: center;
+  opacity: .58;
+}
+
+body:has(.skillmap-admin-sidebar) .table thead th .skillmap-sort-link:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+body:has(.skillmap-admin-sidebar) .table thead th .skillmap-sort-link.active {
+  background: #eff6ff;
+  color: var(--sm-primary-dark);
+}
+
+body:has(.skillmap-admin-sidebar) .table thead th .skillmap-sort-link.active .skillmap-sort-icon {
+  color: currentColor;
+  opacity: 1;
+}
+
 body:has(.skillmap-admin-sidebar) .skillmap-table-number-col {
   width: 4rem;
   min-width: 4rem;
