@@ -5,6 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+date_default_timezone_set('Asia/Kuala_Lumpur');
+
 defined('DB_HOST') || define('DB_HOST', 'localhost');
 defined('DB_NAME') || define('DB_NAME', 'skill_map_system');
 defined('DB_USER') || define('DB_USER', 'root');

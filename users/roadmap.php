@@ -115,7 +115,8 @@ if ($analysis) {
         'SELECT ar.skill_id, ar.status AS gap_status, ar.gap_value, s.name AS skill_name,
                 lr.title, lr.platform, lr.url, lr.duration_hours, lr.is_free,
                 COALESCE(urp.status, ar.status) AS roadmap_status,
-                COALESCE(urp.progress_pct, 0) AS progress_pct
+                COALESCE(urp.progress_pct, 0) AS progress_pct,
+                urp.updated_at AS progress_updated_at
          FROM analysis_results ar
          INNER JOIN skills s ON s.id = ar.skill_id
          LEFT JOIN learning_resources lr ON lr.skill_id = ar.skill_id
@@ -237,6 +238,13 @@ $roadmapStatusItems = [
                   <?php else: ?>
                     <div class="d-grid gap-3">
                       <?php foreach ($section['items'] as $item): ?>
+                        <?php
+                          $durationHours = (float) ($item['duration_hours'] ?? 0);
+                          $timerStart = (string) ($item['progress_updated_at'] ?? '');
+                          $showTimer = $item['roadmap_status'] === 'Partial' && $timerStart !== '' && $durationHours > 0;
+                          $startTimestamp = $showTimer ? strtotime($timerStart) : false;
+                          $endTimestamp = $startTimestamp ? $startTimestamp + (int) round($durationHours * 3600) : 0;
+                        ?>
                         <div class="skillmap-roadmap-item" data-search-item data-search-text="<?= htmlspecialchars($item['skill_name'] . ' ' . $section['badge'] . ' ' . $item['title'] . ' ' . $item['platform'] . ' ' . $item['roadmap_status'], ENT_QUOTES, 'UTF-8') ?>">
                           <div class="skillmap-roadmap-item-top">
                             <div class="min-w-0">
@@ -257,6 +265,21 @@ $roadmapStatusItems = [
                               <?php endif; ?>
                             </div>
                           </div>
+                          <?php if ($showTimer && $startTimestamp && $endTimestamp > 0): ?>
+                            <div class="skillmap-roadmap-timer mt-3" data-roadmap-countdown data-end-time="<?= htmlspecialchars(date(DATE_ATOM, $endTimestamp), ENT_QUOTES, 'UTF-8') ?>">
+                              <div class="skillmap-roadmap-timer-icon"><i class="bi bi-clock-history"></i></div>
+                              <div class="flex-grow-1">
+                                <div class="d-flex flex-wrap justify-content-between gap-2">
+                                  <span class="fw-semibold">Counting Time</span>
+                                  <span class="skillmap-roadmap-countdown-value" data-countdown-value>Calculating...</span>
+                                </div>
+                                <div class="small text-muted">
+                                  Started <?= htmlspecialchars(date('j M Y, g:i A', $startTimestamp), ENT_QUOTES, 'UTF-8') ?>
+                                  · Ends <?= htmlspecialchars(date('j M Y, g:i A', $endTimestamp), ENT_QUOTES, 'UTF-8') ?>
+                                </div>
+                              </div>
+                            </div>
+                          <?php endif; ?>
                           <div class="progress mt-3"><div class="progress-bar bg-<?= htmlspecialchars($section['bar'], ENT_QUOTES, 'UTF-8') ?>" style="width: <?= (int) $item['progress_pct'] ?>%"></div></div>
                           <div class="skillmap-action-row mt-3">
                             <?php if ($item['url']): ?>
@@ -309,5 +332,35 @@ $roadmapStatusItems = [
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/fyp_skillmapsystem/assets/js/app.js"></script>
+  <script>
+    document.querySelectorAll('[data-roadmap-countdown]').forEach((timer) => {
+      const value = timer.querySelector('[data-countdown-value]');
+      const endTime = new Date(timer.getAttribute('data-end-time') || '').getTime();
+      if (!value || Number.isNaN(endTime)) return;
+
+      const render = () => {
+        const remaining = endTime - Date.now();
+        if (remaining <= 0) {
+          value.textContent = 'Time ended';
+          timer.classList.add('skillmap-roadmap-timer-ended');
+          return;
+        }
+
+        const totalSeconds = Math.floor(remaining / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const parts = [];
+
+        if (days > 0) parts.push(`${days}d`);
+        parts.push(`${hours}h`, `${minutes}m`, `${seconds}s`);
+        value.textContent = parts.join(' ');
+      };
+
+      render();
+      setInterval(render, 1000);
+    });
+  </script>
 </body>
 </html>

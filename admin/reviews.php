@@ -20,7 +20,7 @@ function admin_student_analysis_summary(string $summary): string
 }
 
 $students = skillmap_fetch_all(
-    'SELECT u.id, u.name, u.email, u.programme, u.year_level, u.avatar_initials, u.profile_icon, u.status,
+    'SELECT u.id, u.name, u.username, u.email, u.programme, u.year_level, u.avatar_initials, u.profile_icon, u.status,
             COALESCE((SELECT COUNT(*) FROM user_skill_ratings r WHERE r.user_id = u.id), 0) AS rated_skills,
             COALESCE((SELECT COUNT(*) FROM analyses a WHERE a.user_id = u.id), 0) AS analyses_done,
             COALESCE((SELECT ROUND(MAX(a.match_score)) FROM analyses a WHERE a.user_id = u.id), 0) AS best_match
@@ -178,7 +178,7 @@ $distributionValues = array_values($ratingCounts);
             <div class="skillmap-student-review-list">
               <?php foreach ($students as $student): ?>
                 <?php $isSelected = (int) $student['id'] === $selectedStudentId; ?>
-                <a class="skillmap-review-student <?= $isSelected ? 'active' : '' ?>" href="/fyp_skillmapsystem/admin/reviews?student_id=<?= (int) $student['id'] ?>" data-search-item data-filter-programme="<?= htmlspecialchars($student['programme'], ENT_QUOTES, 'UTF-8') ?>" data-filter-status="<?= htmlspecialchars($student['status'], ENT_QUOTES, 'UTF-8') ?>" data-search-text="<?= htmlspecialchars($student['name'] . ' ' . $student['email'] . ' ' . $student['programme'] . ' ' . $student['year_level'] . ' ' . $student['status'], ENT_QUOTES, 'UTF-8') ?>">
+                <a class="skillmap-review-student <?= $isSelected ? 'active' : '' ?>" href="/fyp_skillmapsystem/admin/reviews?student_id=<?= (int) $student['id'] ?>" data-search-item data-filter-programme="<?= htmlspecialchars($student['programme'], ENT_QUOTES, 'UTF-8') ?>" data-filter-status="<?= htmlspecialchars($student['status'], ENT_QUOTES, 'UTF-8') ?>" data-search-text="<?= htmlspecialchars($student['name'] . ' ' . $student['username'] . ' ' . $student['email'] . ' ' . $student['programme'] . ' ' . $student['year_level'] . ' ' . $student['status'], ENT_QUOTES, 'UTF-8') ?>">
                   <?php if (!empty($student['profile_icon'])): ?>
                     <img class="table-profile-icon" src="/fyp_skillmapsystem/<?= htmlspecialchars((string) $student['profile_icon'], ENT_QUOTES, 'UTF-8') ?>" alt="">
                   <?php else: ?>
@@ -186,6 +186,7 @@ $distributionValues = array_values($ratingCounts);
                   <?php endif; ?>
                   <span class="flex-grow-1">
                     <span class="d-block fw-semibold"><?= htmlspecialchars($student['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="d-block small text-info fw-semibold">@<?= htmlspecialchars((string) $student['username'], ENT_QUOTES, 'UTF-8') ?></span>
                     <span class="small"><?= htmlspecialchars($student['programme'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($student['year_level'], ENT_QUOTES, 'UTF-8') ?></span>
                   </span>
                   <span class="badge <?= $student['status'] === 'Active' ? 'text-bg-success' : 'text-bg-secondary' ?>"><?= htmlspecialchars($student['status'], ENT_QUOTES, 'UTF-8') ?></span>

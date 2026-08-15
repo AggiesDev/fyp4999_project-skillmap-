@@ -951,6 +951,48 @@ body:has(.skillmap-admin-sidebar) .btn {
 .skillmap-roadmap-section-warning { border-left: 4px solid var(--sm-warning); }
 .skillmap-roadmap-section-success { border-left: 4px solid var(--sm-success); }
 
+.skillmap-roadmap-timer {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  border: 1px solid #bfdbfe;
+  border-radius: .75rem;
+  background: #eff6ff;
+  color: #1e3a8a;
+  padding: .85rem;
+}
+
+.skillmap-roadmap-timer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  flex: 0 0 auto;
+}
+
+.skillmap-roadmap-countdown-value {
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.skillmap-roadmap-timer-ended {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.skillmap-roadmap-timer-ended .skillmap-roadmap-timer-icon {
+  background: #f97316;
+}
+
+.skillmap-roadmap-timer-ended .skillmap-roadmap-countdown-value {
+  color: #c2410c;
+}
+
 .skillmap-resource-meta {
   min-width: 96px;
   text-align: right;
