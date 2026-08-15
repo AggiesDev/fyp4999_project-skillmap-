@@ -306,6 +306,8 @@ if ($editId > 0) {
 }
 $showUserForm = $editUser || isset($_GET['new']) || ($error !== '' && $postAction === 'save_user');
 $addUserHref = isset($_GET['new']) ? '/fyp_skillmapsystem/admin/users' : '/fyp_skillmapsystem/admin/users?new=1';
+$currentUserQueryString = (string) ($_SERVER['QUERY_STRING'] ?? '');
+$refreshUserTableHref = '/fyp_skillmapsystem/admin/users' . ($currentUserQueryString !== '' ? '?' . $currentUserQueryString : '');
 $allowedUserSorts = [
     'user' => [
         'asc' => 'u.name ASC, u.email ASC',
@@ -644,9 +646,14 @@ $formOptions = admin_user_form_options($pdo);
                 <h2 class="h5 fw-bold mb-1">User Table</h2>
                 <div class="text-muted small">Search and filter individual user accounts.</div>
               </div>
-              <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle-panel="adminUserTableBody">
-                <i class="bi bi-eye me-1"></i>Show/Hide
-              </button>
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="<?= htmlspecialchars($refreshUserTableHref, ENT_QUOTES, 'UTF-8') ?>" title="Refresh user table">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </a>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle-panel="adminUserTableBody">
+                  <i class="bi bi-eye me-1"></i>Show/Hide
+                </button>
+              </div>
             </div>
             <div class="row g-3 align-items-end" id="adminUserTableFilters">
               <div class="col-lg-5">
