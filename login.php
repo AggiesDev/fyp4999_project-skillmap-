@@ -125,7 +125,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
               <input type="hidden" name="tab" value="login">
               <div>
                 <label class="form-label">Email Address or Username</label>
-                <input type="text" name="email" class="form-control form-control-lg" placeholder="student@gmail.com or demostudent" required>
+                <input type="text" name="email" class="form-control form-control-lg" placeholder="student@gmail.com or student" required>
               </div>
               <div>
                 <label class="form-label">Password</label>
@@ -139,12 +139,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 <a href="#registerPane" class="small text-decoration-none" data-bs-toggle="pill">Create an account</a>
               </div>
               <button type="submit" name="login_submit" class="btn btn-primary btn-lg w-100">Login to Skill Map</button>
-              <div class="skillmap-demo-box">
-                <div class="fw-semibold mb-1">Demo Accounts</div>
+              <div class="skillmap-account-box">
+                <div class="fw-semibold mb-1">System Accounts</div>
                 <div>admin@gmail.com / admin@123</div>
                 <div>lecturer@gmail.com / lecturer@123</div>
                 <div>student@gmail.com / student@123</div>
-                <div>demostaff@gmail.com / staff@123</div>
+                <div>staff@gmail.com / staff@123</div>
               </div>
             </form>
           </div>

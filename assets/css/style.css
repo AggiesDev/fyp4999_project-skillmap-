@@ -209,7 +209,7 @@ body:has(.skillmap-admin-sidebar) {
   box-shadow: 0 8px 18px rgba(15,23,42,.08);
 }
 
-.skillmap-demo-box {
+.skillmap-account-box {
   border-radius: .9rem;
   padding: .85rem 1rem;
   background: #eff6ff;

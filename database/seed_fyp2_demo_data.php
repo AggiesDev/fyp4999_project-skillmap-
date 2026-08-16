@@ -7,49 +7,49 @@ $testStudents = [
     ['student01', 'Aina Farhana', 'Information Systems', 'Year 4', 'female', 'Web Developer', [
         'PHP' => 4, 'MySQL' => 4, 'JavaScript' => 4, 'Bootstrap 5' => 3, 'Git' => 3, 'API Integration' => 4, 'Project Planning' => 3,
         'Team Coordination' => 4, 'Event Planning' => 4, 'Public Speaking' => 4, 'Customer Support' => 3,
-    ], 'Demo case with all Web Developer requirements met; also strong leadership evidence.'],
+    ], 'Validation case with all Web Developer requirements met; also strong leadership evidence.'],
     ['student02', 'Brandon Lee', 'Information Systems', 'Year 3', 'male', 'Web Developer', [
         'PHP' => 0, 'MySQL' => 0, 'JavaScript' => 0, 'Bootstrap 5' => 0, 'Git' => 0, 'API Integration' => 0, 'Project Planning' => 0,
-    ], 'Demo case with no current Web Developer benchmark requirements met.'],
+    ], 'Validation case with no current Web Developer benchmark requirements met.'],
     ['student03', 'Chong Mei Xin', 'Software Engineering', 'Year 4', 'female', 'Web Developer', [
         'PHP' => 3, 'MySQL' => 3, 'JavaScript' => 3, 'Bootstrap 5' => 2, 'Git' => 2, 'API Integration' => 3, 'Project Planning' => 2,
-    ], 'Demo case where benchmark skills are close to the required level, so roadmap items are prioritised as Partial.'],
+    ], 'Validation case where benchmark skills are close to the required level, so roadmap items are prioritised as Partial.'],
     ['student04', 'Danish Hakim', 'Computer Science', 'Year 2', 'male', 'Web Developer', [
         'PHP' => 2, 'MySQL' => 4, 'JavaScript' => 5, 'Bootstrap 5' => 1, 'Git' => 3, 'API Integration' => 0, 'Project Planning' => 3,
-    ], 'Demo case with mixed Have, Partial, and Missing Web Developer skill statuses.'],
+    ], 'Validation case with mixed Have, Partial, and Missing Web Developer skill statuses.'],
     ['student05', 'Elena Tan', 'Information Systems', 'Year 4', 'female', 'Student Club President', [
         'Team Coordination' => 4, 'Event Planning' => 4, 'Public Speaking' => 4, 'Project Planning' => 3, 'Customer Support' => 3,
-    ], 'Demo case with all Student Club President requirements met.'],
+    ], 'Validation case with all Student Club President requirements met.'],
     ['student06', 'Farhan Zulkifli', 'Information Systems', 'Year 2', 'male', 'Student Club President', [
         'Team Coordination' => 0, 'Event Planning' => 0, 'Public Speaking' => 0, 'Project Planning' => 0, 'Customer Support' => 0,
-    ], 'Demo case with no current Student Club President benchmark requirements met.'],
+    ], 'Validation case with no current Student Club President benchmark requirements met.'],
     ['student07', 'Grace Wong', 'Software Engineering', 'Year 3', 'female', 'Student Club President', [
         'Team Coordination' => 3, 'Event Planning' => 2, 'Public Speaking' => 4, 'Project Planning' => 2, 'Customer Support' => 1,
-    ], 'Demo case with mixed leadership strengths and gaps.'],
+    ], 'Validation case with mixed leadership strengths and gaps.'],
     ['student08', 'Harith Azman', 'Computer Science', 'Year 4', 'male', 'Data Analyst', [
         'MySQL' => 4, 'Python' => 3, 'Statistics' => 2, 'Data Visualization' => 4, 'Research Writing' => 2,
-    ], 'Demo case for Data Analyst readiness and analytics.'],
+    ], 'Validation case for Data Analyst readiness and analytics.'],
     ['student09', 'Intan Maisarah', 'Information Systems', 'Year 1', 'female', 'IT Support', [
         'Troubleshooting' => 4, 'Network Basics' => 3, 'Customer Support' => 4, 'MySQL' => 2, 'Git' => 1,
-    ], 'Demo case for IT Support readiness.'],
+    ], 'Validation case for IT Support readiness.'],
     ['student10', 'Jason Ng', 'Software Engineering', 'Year 2', 'male', 'Software Engineer', [
         'JavaScript' => 4, 'Git' => 4, 'API Integration' => 2, 'Problem Solving' => 4, 'Cloud Fundamentals' => 2, 'Agile Methodology' => 2,
-    ], 'Demo case for Software Engineer readiness with several improvement items.'],
+    ], 'Validation case for Software Engineer readiness with several improvement items.'],
     ['student11', 'Kavitha Raj', 'Computer Science', 'Year 3', 'female', 'Cybersecurity Analyst', [
         'Cybersecurity Basics' => 3, 'Network Basics' => 4, 'Troubleshooting' => 2, 'Problem Solving' => 3, 'Research Writing' => 2,
-    ], 'Demo case for Cybersecurity Analyst gaps and analytics.'],
+    ], 'Validation case for Cybersecurity Analyst gaps and analytics.'],
     ['student12', 'Luqman Hakim', 'Information Systems', 'Year 4', 'male', 'Project Manager', [
         'Project Planning' => 4, 'Agile Methodology' => 3, 'Team Coordination' => 3, 'Public Speaking' => 2, 'Requirements Analysis' => 3,
-    ], 'Demo case for leadership Project Manager readiness.'],
+    ], 'Validation case for leadership Project Manager readiness.'],
     ['student13', 'Maya Sofea', 'Software Engineering', 'Year 1', 'female', 'UI/UX Designer', [
         'UI/UX Design' => 4, 'Public Speaking' => 2, 'Requirements Analysis' => 3, 'Bootstrap 5' => 2, 'Research Writing' => 2,
-    ], 'Demo case for UI/UX Designer cross-category gap results.'],
+    ], 'Validation case for UI/UX Designer cross-category gap results.'],
     ['student14', 'Nabil Irfan', 'Computer Science', 'Year 2', 'male', 'Database Administrator', [
         'MySQL' => 3, 'Database Administration' => 2, 'Troubleshooting' => 3, 'Cybersecurity Basics' => 2, 'Cloud Fundamentals' => 1,
-    ], 'Demo case for lower Database Administrator readiness.'],
+    ], 'Validation case for lower Database Administrator readiness.'],
     ['student15', 'Olivia Chan', 'Information Systems', 'Year 3', 'female', 'Business Analyst', [
         'Requirements Analysis' => 4, 'Data Visualization' => 3, 'Public Speaking' => 3, 'Project Planning' => 3, 'Research Writing' => 3,
-    ], 'Demo case for high Business Analyst readiness.'],
+    ], 'Validation case for high Business Analyst readiness.'],
 ];
 
 $staffUsers = [
@@ -242,7 +242,7 @@ function createAnalysis(PDO $pdo, int $userId, int $roleId, array $benchmarkRows
 
     $matchScore = $scoreRequired > 0 ? round(($scoreEarned / $scoreRequired) * 100, 2) : 0.0;
     $summaryText = sprintf(
-        'Demo profile analysis: %.2f%% match. Have %d, Partial %d, Missing %d. %s',
+        'Profile analysis: %.2f%% match. Have %d, Partial %d, Missing %d. %s',
         $matchScore,
         $summary['Have'],
         $summary['Partial'],
@@ -416,15 +416,15 @@ try {
                 'user_id' => $userId,
                 'skill_id' => fetchId($pdo, 'skills', $skillName),
                 'rating' => $rating,
-                'notes' => 'Demo self-assessment evidence for ' . $skillName,
+                'notes' => 'Self-assessment evidence for ' . $skillName,
             ]);
         }
 
         $credentialStmt->execute([
             'user_id' => $userId,
             'entry_type' => 'Skill',
-            'title' => $targetRole . ' demo evidence',
-            'issuer' => 'UTM SkillMap Demo',
+            'title' => $targetRole . ' evidence',
+            'issuer' => 'UTM SkillMap',
             'notes' => $note,
             'earned_at' => $today->modify('-' . (10 + $index) . ' days')->format('Y-m-d'),
         ]);
@@ -473,7 +473,7 @@ try {
         'UAT reminder',
         'Analytics validation data',
         'Demo cohort ready',
-        'Analytics demo data',
+        'Analytics validation data',
     ];
     $notificationPlaceholders = implode(',', array_fill(0, count($seedNotificationTitles), '?'));
     $pdo->prepare("DELETE FROM notifications WHERE title IN ({$notificationPlaceholders})")->execute($seedNotificationTitles);
@@ -483,9 +483,9 @@ try {
          VALUES (:sender_role, :recipient_role, :notification_type, :title, :body)'
     );
     foreach ([
-        ['admin', 'student', 'info', 'Demo cohort ready', 'Use student01 to student15 for career and leadership skill-gap demonstrations.'],
-        ['lecturer', 'student', 'reminder', 'Demo session reminder', 'Please complete the role-specific UAT scenario and SUS questionnaire after the demo session.'],
-        ['staff', 'lecturer', 'message', 'Analytics demo data', 'The FYP2 demo cohort contains known match percentages for dashboard verification.'],
+        ['admin', 'student', 'info', 'Validation cohort ready', 'Use student01 to student15 for career and leadership skill-gap reviews.'],
+        ['lecturer', 'student', 'reminder', 'Validation session reminder', 'Please complete the role-specific UAT scenario and SUS questionnaire after the validation session.'],
+        ['staff', 'lecturer', 'message', 'Analytics validation data', 'The FYP2 validation cohort contains known match percentages for dashboard verification.'],
     ] as $notification) {
         $notificationStmt->execute([
             'sender_role' => $notification[0],
@@ -499,14 +499,14 @@ try {
     $pdo->commit();
 } catch (Throwable $exception) {
     $pdo->rollBack();
-    fwrite(STDERR, 'FYP2 demo data seed failed: ' . $exception->getMessage() . PHP_EOL);
+    fwrite(STDERR, 'FYP2 data seed failed: ' . $exception->getMessage() . PHP_EOL);
     exit(1);
 }
 
-echo 'FYP2 demo data seed completed.' . PHP_EOL;
+echo 'FYP2 data seed completed.' . PHP_EOL;
 echo 'Accounts created: 15 students, 5 staff, 3 lecturers.' . PHP_EOL;
 echo 'Password rule: username@123, for example student01@123.' . PHP_EOL;
-echo 'Expected latest demo analysis scores:' . PHP_EOL;
+echo 'Expected latest analysis scores:' . PHP_EOL;
 foreach ($expected as [$username, $role, $score]) {
     echo sprintf('- %s / %s / %.2f%%', $username, $role, $score) . PHP_EOL;
 }

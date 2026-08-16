@@ -52,14 +52,14 @@ The system supports students, lecturers, staff, and admins. Students can manage 
 5. Confirm `config/dbconnect.php` matches your local MySQL credentials.
 6. Open `http://localhost/fyp_skillmapsystem/login.php`.
 
-## Demo Accounts
+## Default Accounts
 
 - Admin: `admin@gmail.com` / `admin@123`
 - Student: `student@gmail.com` / `student@123`
 - Lecturer: `lecturer@gmail.com` / `lecturer@123`
-- Lecturer: `demostaff@gmail.com` / `staff@123`
+- Staff: `staff@gmail.com` / `staff@123`
 
-Some seeded accounts also have usernames, such as `demostudent` and `demolecturer`, which can be used instead of email on the login form.
+Seeded accounts also have usernames, such as `student`, `lecturer`, and `staff`, which can be used instead of email on the login form.
 
 ## Registration Rules
 

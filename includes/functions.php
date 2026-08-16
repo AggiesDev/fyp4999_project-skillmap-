@@ -48,6 +48,30 @@ function skillmap_user_column_exists(string $column): bool
     return $exists;
 }
 
+function skillmap_cleanup_showcase_wording(): void
+{
+    global $conn;
+
+    if (!($conn instanceof mysqli)) {
+        return;
+    }
+
+    @mysqli_query($conn, 'UPDATE users SET name = "Student User", avatar_initials = "SU" WHERE email = "student@gmail.com" AND name = "Demo Student"');
+    @mysqli_query($conn, 'UPDATE users SET name = "Lecturer User", avatar_initials = "LU" WHERE email = "lecturer@gmail.com" AND name = "Demo Lecturer"');
+    @mysqli_query($conn, 'UPDATE users SET name = "Staff User", avatar_initials = "ST" WHERE email = "staff@gmail.com" AND name = "Demo Staff"');
+    @mysqli_query($conn, 'UPDATE users SET username = "student" WHERE email = "student@gmail.com" AND username = "demostudent" AND NOT EXISTS (SELECT 1 FROM (SELECT id FROM users WHERE username = "student" AND email <> "student@gmail.com") existing_user)');
+    @mysqli_query($conn, 'UPDATE users SET username = "lecturer" WHERE email = "lecturer@gmail.com" AND username = "demolecturer" AND NOT EXISTS (SELECT 1 FROM (SELECT id FROM users WHERE username = "lecturer" AND email <> "lecturer@gmail.com") existing_user)');
+    @mysqli_query($conn, 'UPDATE users SET username = "staff" WHERE email = "staff@gmail.com" AND username = "demostaff" AND NOT EXISTS (SELECT 1 FROM (SELECT id FROM users WHERE username = "staff" AND email <> "staff@gmail.com") existing_user)');
+    @mysqli_query($conn, 'UPDATE users SET name = TRIM(REPLACE(REPLACE(name, "Demo", ""), "demo", "")) WHERE name LIKE "%Demo%" OR name LIKE "%demo%"');
+    @mysqli_query($conn, 'UPDATE users SET username = CONCAT(role, id) WHERE username LIKE "%Demo%" OR username LIKE "%demo%"');
+    @mysqli_query($conn, 'UPDATE users SET email = CONCAT(role, id, "@gmail.com") WHERE email LIKE "%Demo%" OR email LIKE "%demo%"');
+
+    @mysqli_query($conn, 'UPDATE analyses SET ai_summary = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ai_summary, "Demo profile analysis", "Profile analysis"), "demo profile analysis", "Profile analysis"), "Demo analysis", "Profile analysis"), "demo analysis", "Profile analysis"), "Demo case", "Validation case"), "demo case", "Validation case") WHERE ai_summary LIKE "%Demo%" OR ai_summary LIKE "%demo%"');
+    @mysqli_query($conn, 'UPDATE user_skill_ratings SET notes = REPLACE(REPLACE(notes, "Demo self-assessment evidence", "Self-assessment evidence"), "demo self-assessment evidence", "Self-assessment evidence") WHERE notes LIKE "%Demo%" OR notes LIKE "%demo%"');
+    @mysqli_query($conn, 'UPDATE user_credentials SET title = REPLACE(REPLACE(title, " demo evidence", " evidence"), " Demo evidence", " evidence"), issuer = REPLACE(issuer, "UTM SkillMap Demo", "UTM SkillMap"), notes = REPLACE(REPLACE(notes, "Demo case", "Validation case"), "demo case", "Validation case") WHERE title LIKE "%demo%" OR issuer LIKE "%Demo%" OR notes LIKE "%Demo%" OR notes LIKE "%demo%"');
+    @mysqli_query($conn, 'UPDATE notifications SET title = REPLACE(REPLACE(REPLACE(title, "Demo cohort ready", "Validation cohort ready"), "Demo session reminder", "Validation session reminder"), "Analytics demo data", "Analytics validation data"), body = REPLACE(REPLACE(REPLACE(body, "demo session", "validation session"), "FYP2 demo cohort", "FYP2 validation cohort"), "skill-gap demonstrations", "skill-gap reviews") WHERE title LIKE "%Demo%" OR title LIKE "%demo%" OR body LIKE "%Demo%" OR body LIKE "%demo%"');
+}
+
 function skillmap_bootstrap_database(): void
 {
     global $conn;
@@ -149,6 +173,7 @@ function skillmap_bootstrap_database(): void
     if (!skillmap_user_column_exists('last_login_at')) {
         mysqli_query($conn, 'ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER status');
     }
+    skillmap_cleanup_showcase_wording();
     @mysqli_query($conn, 'UPDATE users SET gender = "male" WHERE gender IS NULL OR gender = ""');
     @mysqli_query($conn, 'UPDATE users SET profile_icon = CASE WHEN role IN ("admin", "staff", "lecturer") THEN "profileicons/icons8-administrator-male-100.png" ELSE "profileicons/icons8-add-user-male-100.png" END WHERE profile_icon IS NULL OR profile_icon = ""');
     @mysqli_query($conn, 'UPDATE users SET profile_icon = "profileicons/icons8-administrator-male-100.png" WHERE role IN ("admin", "staff", "lecturer") AND profile_icon = "profileicons/icons8-add-user-male-100.png"');
@@ -205,24 +230,24 @@ function skillmap_bootstrap_database(): void
         ];
 
         skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
+            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE name = VALUES(name), username = VALUES(username), avatar_initials = VALUES(avatar_initials), email = VALUES(email)',
             'ssssssssss',
             ['Admin User', 'admin@gmail.com', 'admin@gmail.com', $passwords['admin'], 'admin', 'FDSIT', 'Staff', 'AU', 'male', skillmap_default_profile_icon('male', 'admin')]
         );
         skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
+            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE name = VALUES(name), username = VALUES(username), avatar_initials = VALUES(avatar_initials), email = VALUES(email)',
             'ssssssssss',
-            ['Demo Student', 'demostudent', 'student@gmail.com', $passwords['student'], 'student', 'Information Systems', 'Year 4', 'DS', 'male', skillmap_default_profile_icon('male', 'student')]
+            ['Student User', 'student', 'student@gmail.com', $passwords['student'], 'student', 'Information Systems', 'Year 4', 'SU', 'male', skillmap_default_profile_icon('male', 'student')]
         );
         skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
+            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE name = VALUES(name), username = VALUES(username), avatar_initials = VALUES(avatar_initials), email = VALUES(email)',
             'ssssssssss',
-            ['Demo Lecturer', 'demolecturer', 'lecturer@gmail.com', $passwords['lecturer'], 'lecturer', 'Information Systems', 'Staff', 'DL', 'male', skillmap_default_profile_icon('male', 'lecturer')]
+            ['Lecturer User', 'lecturer', 'lecturer@gmail.com', $passwords['lecturer'], 'lecturer', 'Information Systems', 'Staff', 'LU', 'male', skillmap_default_profile_icon('male', 'lecturer')]
         );
         skillmap_db_query(
-            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE email = VALUES(email)',
+            'INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "Active") ON DUPLICATE KEY UPDATE name = VALUES(name), username = VALUES(username), avatar_initials = VALUES(avatar_initials), email = VALUES(email)',
             'ssssssssss',
-            ['Demo Staff', 'demostaff', 'staff@gmail.com', $passwords['lecturer'], 'staff', 'Information Systems', 'Staff', 'ST', 'male', skillmap_default_profile_icon('male', 'staff')]
+            ['Staff User', 'staff', 'staff@gmail.com', $passwords['lecturer'], 'staff', 'Information Systems', 'Staff', 'ST', 'male', skillmap_default_profile_icon('male', 'staff')]
         );
 
         skillmap_db_query('INSERT INTO notifications (sender_role, recipient_role, notification_type, title, body) VALUES (?, ?, ?, ?, ?)', 'sssss', ['admin', 'student', 'info', 'Welcome to Skill Map', 'Start by updating your profile and completing your first analysis.']);

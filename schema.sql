@@ -292,9 +292,9 @@ ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 INSERT INTO users (name, username, email, password_hash, role, programme, year_level, avatar_initials, gender, profile_icon, status) VALUES
 ('Admin User', 'admin@gmail.com', 'admin@gmail.com', '$2y$10$wD08lmaueYT.1/QHAl63q.99WXPomKTsVyIYGKrs0bozsj.N1ALV2', 'admin', 'FDSIT', 'Staff', 'AU', 'male', 'profileicons/icons8-administrator-male-100.png', 'Active'),
-('Demo Student', 'demostudent', 'student@gmail.com', '$2y$10$WAhc1B6/Ul7XRbNcXYpuD.HTMcKZqDKnCuaBqC/X7WHsHi/hYBCOy', 'student', 'Information Systems', 'Year 4', 'DS', 'male', 'profileicons/icons8-add-user-male-100.png', 'Active'),
-('Demo Lecturer', 'demolecturer', 'lecturer@gmail.com', '$2y$10$SSn8Vmrxf7EQVjdxcedMG.o.hl/ehe52ODEBmviThS1y0GA57hJhG', 'lecturer', 'Information Systems', 'Staff', 'DL', 'male', 'profileicons/icons8-administrator-male-100.png', 'Active'),
-('Demo Staff', 'demostaff', 'staff@gmail.com', '$2y$10$SSn8Vmrxf7EQVjdxcedMG.o.hl/ehe52ODEBmviThS1y0GA57hJhG', 'staff', 'Information Systems', 'Staff', 'ST', 'male', 'profileicons/icons8-administrator-male-100.png', 'Active')
+('Student User', 'student', 'student@gmail.com', '$2y$10$WAhc1B6/Ul7XRbNcXYpuD.HTMcKZqDKnCuaBqC/X7WHsHi/hYBCOy', 'student', 'Information Systems', 'Year 4', 'SU', 'male', 'profileicons/icons8-add-user-male-100.png', 'Active'),
+('Lecturer User', 'lecturer', 'lecturer@gmail.com', '$2y$10$SSn8Vmrxf7EQVjdxcedMG.o.hl/ehe52ODEBmviThS1y0GA57hJhG', 'lecturer', 'Information Systems', 'Staff', 'LU', 'male', 'profileicons/icons8-administrator-male-100.png', 'Active'),
+('Staff User', 'staff', 'staff@gmail.com', '$2y$10$SSn8Vmrxf7EQVjdxcedMG.o.hl/ehe52ODEBmviThS1y0GA57hJhG', 'staff', 'Information Systems', 'Staff', 'ST', 'male', 'profileicons/icons8-administrator-male-100.png', 'Active')
 ON DUPLICATE KEY UPDATE email = VALUES(email);
 
 INSERT INTO notifications (sender_role, recipient_role, notification_type, title, body) VALUES
