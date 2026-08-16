@@ -65,6 +65,7 @@ function skillmap_cleanup_showcase_wording(): void
     @mysqli_query($conn, 'UPDATE users SET name = TRIM(REPLACE(REPLACE(name, "Demo", ""), "demo", "")) WHERE name LIKE "%Demo%" OR name LIKE "%demo%"');
     @mysqli_query($conn, 'UPDATE users SET username = CONCAT(role, id) WHERE username LIKE "%Demo%" OR username LIKE "%demo%"');
     @mysqli_query($conn, 'UPDATE users SET email = CONCAT(role, id, "@gmail.com") WHERE email LIKE "%Demo%" OR email LIKE "%demo%"');
+    @mysqli_query($conn, 'UPDATE users u LEFT JOIN users taken ON taken.email = CONCAT(u.username, "@gmail.com") AND taken.id <> u.id SET u.email = CONCAT(u.username, "@gmail.com") WHERE u.email = CONCAT(u.username, "@utm.my") AND taken.id IS NULL');
 
     @mysqli_query($conn, 'UPDATE analyses SET ai_summary = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ai_summary, "Demo profile analysis", "Profile analysis"), "demo profile analysis", "Profile analysis"), "Demo analysis", "Profile analysis"), "demo analysis", "Profile analysis"), "Demo case", "Validation case"), "demo case", "Validation case") WHERE ai_summary LIKE "%Demo%" OR ai_summary LIKE "%demo%"');
     @mysqli_query($conn, 'UPDATE user_skill_ratings SET notes = REPLACE(REPLACE(notes, "Demo self-assessment evidence", "Self-assessment evidence"), "demo self-assessment evidence", "Self-assessment evidence") WHERE notes LIKE "%Demo%" OR notes LIKE "%demo%"');

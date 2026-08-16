@@ -180,7 +180,7 @@ function fetchId(PDO $pdo, string $table, string $name): int
 
 function upsertUser(PDO $pdo, string $username, string $name, string $role, string $programme, string $year, string $gender): int
 {
-    $email = $username . '@utm.my';
+    $email = $username . '@gmail.com';
     $icon = in_array($role, ['admin', 'lecturer', 'staff'], true)
         ? 'profileicons/icons8-administrator-male-100.png'
         : ($gender === 'female' ? 'profileicons/icons8-add-user-female-skin-type-7-100.png' : 'profileicons/icons8-add-user-male-100.png');

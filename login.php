@@ -135,7 +135,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 </div>
               </div>
               <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <a href="mailto:support@utm.my?subject=Skill%20Map%20Password%20Reset" class="small text-decoration-none">Forgot password?</a>
+                <a href="mailto:support@gmail.com?subject=Skill%20Map%20Password%20Reset" class="small text-decoration-none">Forgot password?</a>
                 <a href="#registerPane" class="small text-decoration-none" data-bs-toggle="pill">Create an account</a>
               </div>
               <button type="submit" name="login_submit" class="btn btn-primary btn-lg w-100">Login to Skill Map</button>
